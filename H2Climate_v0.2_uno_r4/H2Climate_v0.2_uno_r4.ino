@@ -8,7 +8,7 @@
 #define DHTTYPE DHT22
 
 // Server details
-#define SERVER_URL "bestcompany.laravel.cloud"
+#define SERVER_URL "bestcompany.syntaxstore.xyz"
 #define SERVER_PORT 443
 #define API_ROUTE "/api/devices/data"
 //const char* serverUrl = "bestcompany.laravel.cloud";
@@ -67,7 +67,13 @@ void loop() {
 
 void sendSensorData(float temperature, float humidity) {
     // JSON packet
-    String packetData = "{\"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + "}";
+    //String packetData = "{\"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + "}";
+
+    String packetData = "{\"deviceId\": " + String(DEVICE_ID) + ", \"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + "}";
+
+    Serial.println(packetData);
+
+
 
     Serial.println("Sending data to server...");
     httpClient.beginRequest();
