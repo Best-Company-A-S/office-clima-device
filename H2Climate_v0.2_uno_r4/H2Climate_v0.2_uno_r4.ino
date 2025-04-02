@@ -32,6 +32,10 @@ void setup() {
     }
 
     Serial.println("\nWiFi connected successfully");
+
+    // shows the server's ip and it's wifi signal strength
+    Serial.print("\nGot IP: "); Serial.println(WiFi.localIP());
+    Serial.print("Signal strength: "); Serial.println(WiFi.RSSI() + "\n");
 }
 
 
@@ -46,7 +50,7 @@ void loop() {
     }
 
     Serial.print("Temperature: "); Serial.println(temperature);
-    Serial.print("Humidity: "); Serial.println(humidity);
+    Serial.print("Humidity: "); Serial.println(String(humidity) + "\n");
 
     // Send data to API
     // TODO: add error handling
