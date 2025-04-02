@@ -8,13 +8,17 @@
 #define DHTTYPE DHT22
 
 // Server details
-const char* serverUrl = "blabla.com";
-int serverPort = 80;  // Refactor to https later
+#define SERVER_URL "bestcompany.laravel.cloud"
+#define SERVER_PORT 443
+#define API_ROUTE "/api/devices/data"
+//const char* serverUrl = "bestcompany.laravel.cloud";
+//int serverPort = 443;  // Refactor to https later
 
 DHT dht(DHT22_PIN, DHTTYPE);
 
-WiFiClient wifiClient;
-HttpClient httpClient(wifiClient, serverUrl, serverPort);
+WiFiSSLClient wifiClient;
+HttpClient httpClient(wifiClient, SERVER_URL, SERVER_PORT);
+//HttpClient httpClient(wifiClient, serverUrl, serverPort);
 
 
 void setup() {
@@ -23,19 +27,20 @@ void setup() {
     dht.begin();
     
     // Connect to WiFi
-    Serial.print("Attempting WiFi connection");
+    Serial.print("Attempting WiFi connection to "); Serial.println(String(WIFI_SSID) + " network");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
     while (WiFi.status() != WL_CONNECTED) {
-        delay(1000); // 1 second delay
         Serial.print(".");
+        delay(1000); // 1 second delay
     }
 
-    Serial.println("\nWiFi connected successfully");
+    Serial.println("WiFi connected successfully");
 
     // shows the server's ip and it's wifi signal strength
     Serial.print("\nGot IP: "); Serial.println(WiFi.localIP());
-    Serial.print("Signal strength: "); Serial.println(WiFi.RSSI() + "\n");
+    Serial.print("Signal strength: "); Serial.println(WiFi.RSSI());
+    Serial.print("\n");
 }
 
 
@@ -66,7 +71,10 @@ void sendSensorData(float temperature, float humidity) {
 
     Serial.println("Sending data to server...");
     httpClient.beginRequest();
-    httpClient.post("");  // TODO: add API route
+
+    httpClient.post(API_ROUTE);
+    //httpClient.post("/api/devices/data");
+
     httpClient.sendHeader("Content-Type", "application/json");
     httpClient.sendHeader("Content-Length", packetData.length());
     httpClient.beginBody();
