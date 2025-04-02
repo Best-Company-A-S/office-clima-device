@@ -5,10 +5,6 @@
 
 // Test device ID: 6fe26f8eaf7e
 
-// WiFi credentials
-#define WIFI_SSID "DEV"
-#define WIFI_PASS "Kaffe10ko"
-
 // Sensor details
 #define DHT22_PIN 12
 #define DHTTYPE DHT22
