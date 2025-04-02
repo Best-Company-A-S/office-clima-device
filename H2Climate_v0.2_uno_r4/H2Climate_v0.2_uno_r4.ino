@@ -3,8 +3,6 @@
 #include "DHT.h"
 #include "secrets.h" // WiFi credentials
 
-// Test device ID: 6fe26f8eaf7e
-
 // Sensor details
 #define DHT22_PIN 12
 #define DHTTYPE DHT22
