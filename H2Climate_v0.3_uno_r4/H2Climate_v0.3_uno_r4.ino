@@ -1,10 +1,20 @@
 #include "WiFiS3.h"
 #include "ArduinoHttpClient.h"
 #include "DHT.h"
-#include "secrets.h" // Contains WiFi credentials and DEVICE_ID
+#include "secrets.h" // Contains WiFi credentials
 #include <ArduinoJson.h>
 #include <TimeLib.h>
 #include <WiFiUdp.h>
+
+//#########################################################################################
+
+// TODO: Battery logging
+// TODO: Changeable settings
+// TODO: Use MAC address to make a unique DEVICE_ID
+// TODO: Add warning triggers at certain temperatures and humidities
+// TODO: Store more sensor data before sending a packet to reduce packet spam
+
+//#########################################################################################
 
 // Device details
 #define DEVICE_ID "6fe26f8eaf7e" // Test ID
