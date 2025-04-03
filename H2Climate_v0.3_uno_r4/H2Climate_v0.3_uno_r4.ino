@@ -6,9 +6,10 @@
 #include <TimeLib.h>
 #include <WiFiUdp.h>
 
-// name
-// model
-// firmaware version
+// Device details
+#define DEVICE_ID "6fe26f8eaf7e" // Test ID
+#define MODEL_TYPE "Arduino_UNO_R4_WiFi"
+#define FIRMWARE_VERSION "v0.3"
 
 // Sensor details
 #define DHT22_PIN 12
@@ -76,6 +77,8 @@ void loop() {
     // Build JSON packet
     StaticJsonDocument<256> jsonDoc;
     jsonDoc["deviceId"] = DEVICE_ID;
+    jsonDoc["modelType"] = MODEL_TYPE;
+    jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
     jsonDoc["temperature"] = temperature;
     jsonDoc["humidity"] = humidity;
     jsonDoc["timestamp"] = now();  // Time in seconds since epoch
