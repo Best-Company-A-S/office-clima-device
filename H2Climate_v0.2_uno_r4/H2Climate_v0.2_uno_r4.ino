@@ -71,16 +71,11 @@ void sendSensorData(float temperature, float humidity) {
 
     String packetData = "{\"deviceId\": " + String(DEVICE_ID) + ", \"temperature\": " + String(temperature) + ", \"humidity\": " + String(humidity) + "}";
 
+    Serial.println("Sending data to server...");
     Serial.println(packetData);
 
-
-
-    Serial.println("Sending data to server...");
     httpClient.beginRequest();
-
     httpClient.post(API_ROUTE);
-    //httpClient.post("/api/devices/data");
-
     httpClient.sendHeader("Content-Type", "application/json");
     httpClient.sendHeader("Content-Length", packetData.length());
     httpClient.beginBody();
