@@ -5,15 +5,14 @@
 #include <TimeLib.h>
 #include <WiFiUdp.h>
 
-//#########################################################################################
-
-// TODO: Battery logging
-// TODO: Changeable settings
-// TODO: Use MAC address to make a unique DEVICE_ID
-// TODO: Add warning triggers at certain temperatures and humidities
-// TODO: Store more sensor data before sending a packet to reduce packet spam
-
-//#########################################################################################
+//¤=======================================================================================¤
+//| TODO: Battery logging                                                                 |
+//| TODO: Add sound sensor                                                                |                                                                 |
+//| TODO: Changeable settings                                                             |
+//| TODO: Use MAC address to make a unique DEVICE_ID                                      |
+//| TODO: Add warning triggers at certain temperatures and humidities                     |
+//| TODO: Store more sensor data before sending a packet to reduce packet spam            |
+//¤=======================================================================================¤
 
 // Device details
 #define DEVICE_ID "6fe26f8eaf7e" // Test ID
@@ -27,12 +26,13 @@
 // Server details
 #define SERVER_URL "clima-app-blush-beta.vercel.app"
 #define SERVER_PORT 443
-#define API_ROUTE "/api/device/test"
+#define API_DATA_ROUTE "/api/device/readings"
+#define API_REGISTER_ROUTE "/api/device/register"
 
 // Timing settings
-#define API_TIMEOUT  10000 // 10 seconds
-#define WIFI_TIMEOUT 20000 // 20 seconds
-#define LOOP_INTERVAL 5000 //  5 seconds
+#define API_TIMEOUT   15000 // 15 seconds
+#define WIFI_TIMEOUT  20000 // 20 seconds
+#define LOOP_INTERVAL 10000 // 10 seconds
 
 DHT dht(DHT22_PIN, DHTTYPE);
 WiFiSSLClient wifiClient;
@@ -45,8 +45,9 @@ WiFiUDP ntpUDP;
 
 unsigned long previousMillis = 0;
 
-//#########################################################################################
-
+//¤================¤
+//| Setup Function |
+//¤================¤======================================================================¤
 void setup() {
   Serial.begin(9600);
   dht.begin(); // Initialize DHT-22 sensor
@@ -64,9 +65,27 @@ void setup() {
   } else {
     logToSerial("Failed to synchronize time");
   }
+
+// REGISTER PACKET TEST
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+  // Build JSON string for register packet
+  StaticJsonDocument<256> jsonDoc;
+  jsonDoc["deviceId"] = DEVICE_ID;
+  jsonDoc["modelType"] = MODEL_TYPE;
+  jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
+
+  String registerData;
+  serializeJson(jsonDoc, registerData);
+
+  sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 }
 
-
+//¤==============¤
+//| Runtime Loop |
+//¤==============¤========================================================================¤
 void loop() {
   unsigned long currentMillis = millis();
 
@@ -85,11 +104,9 @@ void loop() {
     logToSerial("Temperature: " + String(temperature));
     logToSerial("Humidity: " + String(humidity));
 
-    // Build JSON packet
+    // Build JSON string for data packet
     StaticJsonDocument<256> jsonDoc;
     jsonDoc["deviceId"] = DEVICE_ID;
-    jsonDoc["modelType"] = MODEL_TYPE;
-    jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
     jsonDoc["temperature"] = temperature;
     jsonDoc["humidity"] = humidity;
     jsonDoc["timestamp"] = now();  // Time in seconds since epoch
@@ -97,7 +114,7 @@ void loop() {
     String packetData;
     serializeJson(jsonDoc, packetData);
 
-    sendSensorData(packetData);
+    sendHttpPostRequest(packetData, API_DATA_ROUTE);
   }
 
   // Monitor WiFi connection and try to reconnect if lost
@@ -107,8 +124,9 @@ void loop() {
   }
 }
 
-//#########################################################################################
-
+//¤==========================¤
+//| WiFi Connection Function |
+//¤==========================¤============================================================¤
 void connectWiFi() {
   logToSerial("Attempting WiFi connection to " + String(WIFI_SSID));
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -128,10 +146,10 @@ void connectWiFi() {
   }
 }
 
-//#########################################################################################
-
-// Retrieve the current time from the NTP server
-time_t getNtpTime() {
+//¤==============================¤
+//| NTP Synchronization Function |
+//¤==============================¤========================================================¤
+time_t getNtpTime() { // Retrieve the current time from the NTP server
   const int NTP_PACKET_SIZE = 48;
   byte packetBuffer[NTP_PACKET_SIZE];
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
@@ -165,31 +183,33 @@ time_t getNtpTime() {
   }
 }
 
-//#########################################################################################
-
-// Sends the sensor data to the server using a http post request
-void sendSensorData(String packetData) {
+//¤============================¤
+//| HTTP POST Request Function |
+//¤============================¤==========================================================¤
+// Sends a HTTP POST request with a JSON string to a provided API endpoint
+void sendHttpPostRequest(String jsonPayload, String apiRoute) {
   logToSerial("Sending data to server...");
-  logToSerial(packetData); // Log the JSON payload
+  logToSerial(jsonPayload); // Log the JSON payload
   
   if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
     logToSerial("Error: Failed to connect to server");
     return;
   }
  
-  // HTTP POST request
+  // Building HTTP POST request
   // TODO: Refactor this bit into it's own function
   String httpRequest =
-    "POST "            + String(API_ROUTE) + " HTTP/1.1" + "\r\n" +
-    "Host: "           + String(SERVER_URL)              + "\r\n" +
-    "Content-Type: "   + "application/json"              + "\r\n" +
-    "Content-Length: " + String(packetData.length())     + "\r\n" +
-    "Connection: "     + "close"                     + "\r\n\r\n" +
-    packetData;
+    "POST "            + apiRoute + " HTTP/1.1"       + "\r\n" +
+    "Host: "           + String(SERVER_URL)           + "\r\n" +
+    "Content-Type: "   + "application/json"           + "\r\n" +
+    "Content-Length: " + String(jsonPayload.length()) + "\r\n" +
+    "Connection: "     + "close"                  + "\r\n\r\n" +
+    jsonPayload;
     
+  Serial.println(httpRequest + "\n"); // Log the HTTP request
   wifiClient.print(httpRequest);
   
-  // Wait for a response with a timeout of 5 seconds
+  // Wait for a response with a timeout defined by API_TIMEOUT
   unsigned long timeout = millis();
   while (wifiClient.available() == 0) {
     if (millis() - timeout > API_TIMEOUT) {
@@ -204,14 +224,15 @@ void sendSensorData(String packetData) {
   while (wifiClient.available()) {
     response += (char)wifiClient.read();
   }
-  logToSerial("Response: " + response);
+  Serial.print("Response: " + response);
   
   // Close the connection to free resources
   wifiClient.stop();
 }
 
-//#########################################################################################
-
+//¤========================¤
+//| Fancy Logging Function |
+//¤========================¤==============================================================¤
 void logToSerial(String logMessage) {
   int messageLength = logMessage.length();
   String messageBorder = "";
