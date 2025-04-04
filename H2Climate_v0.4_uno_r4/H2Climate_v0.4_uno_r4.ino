@@ -17,7 +17,7 @@
 // Device details
 #define DEVICE_ID "6fe26f8eaf7e" // Test ID
 #define MODEL_TYPE "Arduino_UNO_R4_WiFi"
-#define FIRMWARE_VERSION "v0.3"
+#define FIRMWARE_VERSION "v0.4"
 
 // Sensor details
 #define DHT22_PIN 12
