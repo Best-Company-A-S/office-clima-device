@@ -1,23 +1,23 @@
 #ifndef FancyLog_h
 #define FancyLog_h
 
-#include "Arduino.h"
-#include "TimeLib.h"  // For timestamps
+#include <Arduino.h>
+
+enum LogLevel {
+  INFO,
+  WARNING,
+  ERROR
+};
 
 class FancyLog {
-public:
-    enum LogLevel {
-        INFO,
-        WARNING,
-        ERROR
-    };
+  public:
+    void logToSerial(String message);
+    void logToSerial(String message, LogLevel level);
 
-    FancyLog();  
-    void log(String message, LogLevel level = INFO);
-
-private:
-    String getTimestamp();
+  private:
     String getLevelString(LogLevel level);
+    char getTopBorderChar(LogLevel level);
+    char getBottomBorderChar(LogLevel level);
 };
 
 #endif
