@@ -10,7 +10,7 @@ void FancyLog::log(String message, LogLevel level) {
     String timestamp = getTimestamp();
     String levelString = getLevelString(level);
     
-    int messageLength = message.length();
+    int messageLength = message.length() + timestamp.length() + levelString.length();
     String border = String('=', messageLength);
 
     Serial.println("¤" + border + "¤");

@@ -28,7 +28,11 @@ WiFiUDP ntpUDP;
 unsigned long previousMillis = 0;
 
 // ### TEST ###
-//FancyLog logger;
+enum LogLevel {
+  INFO,
+  WARNING,
+  ERROR
+};
 // ############
 
 //¤================¤
@@ -52,6 +56,15 @@ void setup() {
     logToSerial("Failed to synchronize time");
   }
 
+
+
+  // ### TEST ###
+  logToSerial("FancyLog test 1");
+  logToSerial("FancyLog test 2", INFO);
+  logToSerial("FancyLog test 3", WARNING);
+  logToSerial("FancyLog test 4", ERROR);
+  // ############
+
 // REGISTER PACKET TEST
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
@@ -67,13 +80,6 @@ void setup() {
   sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  /*
-  // ### TEST ###
-  logger.log("Time synchronized");
-  logger.log("Failed to synchronize time", FancyLog::ERROR);
-  logger.log("WiFi disconnected. Attempting to reconnect...", FancyLog::WARNING);
-  // ############
-  */
 }
 
 //¤==============¤
@@ -218,7 +224,36 @@ void sendHttpPostRequest(String jsonPayload, String apiRoute) {
     response += (char)wifiClient.read();
   }
   Serial.print("Response: " + response);
-  
+
+// REGISTER PACKET TEST
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+  bool success;
+
+  if (apiRoute == API_REGISTER_ROUTE) {
+      // For registration, accept both 200/201 (new registration) and 409 (already registered)
+      success = response.indexOf("200 OK") > 0 ||
+                response.indexOf("201 Created") > 0 ||
+                response.indexOf("409") > 0;
+      
+      if (success && response.indexOf("409") > 0) {
+        logToSerial("Device already registered");
+      } 
+      else if (success) {
+        logToSerial("Device registered successfully");
+      }
+
+  } else {
+    // For other endpoints, only accept 200/201
+    success = response.indexOf("200 OK") > 0 || response.indexOf("201 Created") > 0;
+
+    if (success) {
+      logToSerial("Data sent successfully to " + apiRoute);
+    }
+  }
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
   // Close the connection to free resources
   wifiClient.stop();
 }
@@ -226,6 +261,7 @@ void sendHttpPostRequest(String jsonPayload, String apiRoute) {
 //¤========================¤
 //| Fancy Logging Function |
 //¤========================¤==============================================================¤
+/*
 void logToSerial(String logMessage) {
   int messageLength = logMessage.length();
   String messageBorder = "";
@@ -238,4 +274,76 @@ void logToSerial(String logMessage) {
   Serial.println("¤" + messageBorder + "¤");
   Serial.println("|" + logMessage + "|");
   Serial.println("¤" + messageBorder + "¤");
+}
+*/
+
+// ### ### ### ### ### ###
+
+
+void logToSerial(String logMessage) {
+  String messageBorder = "";
+
+  // Final message with level and padding
+  String fullMessage = " " + logMessage + " ";
+  int messageLength = fullMessage.length();
+  
+  // Make a string of '=' characters matching the length of logMessage
+  for (int i = 0; i < messageLength; i++) {
+    messageBorder += "-";
+  }
+
+  Serial.println("¤" + messageBorder + "¤");
+  Serial.println("|" + fullMessage   + "|");
+  Serial.println("¤" + messageBorder + "¤");
+}
+
+void logToSerial(String logMessage, LogLevel level) {
+
+  char topBorderChar = getTopBorderChar(level);
+  char bottomBorderChar = getBottomBorderChar(level);
+
+  String levelString = getLevelString(level);
+  String messageTopBorder = "";
+  String messageBottomBorder = "";
+
+  // Final message with level and padding
+  String fullMessage = "[" + levelString + "] " + logMessage + " ";
+  int messageLength = fullMessage.length();
+  
+  // Make a string of '=' characters matching the length of logMessage
+  for (int i = 0; i < messageLength; i++) {
+    messageTopBorder += topBorderChar;
+    messageBottomBorder += bottomBorderChar;
+  }
+
+  Serial.println("¤" + messageTopBorder    + "¤");
+  Serial.println("|" + fullMessage         + "|");
+  Serial.println("¤" + messageBottomBorder + "¤");
+}
+
+String getLevelString(LogLevel level) {
+  switch (level) {
+    case INFO: return "INFO";
+    case WARNING: return "WARNING";
+    case ERROR: return "ERROR";
+    default: return "UNKNOWN";
+  }
+}
+
+char getTopBorderChar(LogLevel level) {
+  switch (level) {
+    case INFO: return '=';
+    case WARNING: return 'v';
+    case ERROR: return '\\';
+    default: return '-';
+  }
+}
+
+char getBottomBorderChar(LogLevel level) {
+  switch (level) {
+    case INFO: return '=';
+    case WARNING: return '^';
+    case ERROR: return '/';
+    default: return '-';
+  }
 }
