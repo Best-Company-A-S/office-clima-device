@@ -5,10 +5,11 @@
 #include "DHT.h"
 #include "secrets.h" // Contains WiFi credentials
 #include "params.h" // Contains enviroment parameters
+#include "FancyLog.h" // Custom library
 
 //¤=======================================================================================¤
 //| TODO: Battery logging                                                                 |
-//| TODO: Add sound sensor                                                                |                                                                 |
+//| TODO: Add sound sensor                                                                |
 //| TODO: Changeable settings                                                             |
 //| TODO: Use MAC address to make a unique DEVICE_ID                                      |
 //| TODO: Add warning triggers at certain temperatures and humidities                     |
@@ -25,6 +26,10 @@ const int   daylightOffset_sec = 0;
 WiFiUDP ntpUDP;
 
 unsigned long previousMillis = 0;
+
+// ### TEST ###
+//FancyLog logger;
+// ############
 
 //¤================¤
 //| Setup Function |
@@ -62,6 +67,13 @@ void setup() {
   sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
 
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  /*
+  // ### TEST ###
+  logger.log("Time synchronized");
+  logger.log("Failed to synchronize time", FancyLog::ERROR);
+  logger.log("WiFi disconnected. Attempting to reconnect...", FancyLog::WARNING);
+  // ############
+  */
 }
 
 //¤==============¤
