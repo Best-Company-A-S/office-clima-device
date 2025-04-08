@@ -11,13 +11,12 @@ enum LogLevel {
 
 class FancyLog {
   public:
-    void logToSerial(String message);
-    void logToSerial(String message, LogLevel level);
+    void toSerial(String message);
+    void toSerial(String message, LogLevel level);
 
   private:
     String getLevelString(LogLevel level);
-    char getTopBorderChar(LogLevel level);
-    char getBottomBorderChar(LogLevel level);
+    char getBorderChar(LogLevel level);
 };
 
 #endif

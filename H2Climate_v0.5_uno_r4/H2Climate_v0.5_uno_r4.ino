@@ -1,11 +1,12 @@
 #include <ArduinoJson.h>
+#include <Arduino.h>
 #include <TimeLib.h>
 #include <WiFiUdp.h>
-#include "WiFiS3.h"
-#include "DHT.h"
+#include <WiFiS3.h>
+#include <DHT.h>
 #include "secrets.h" // Contains WiFi credentials
 #include "params.h" // Contains enviroment parameters
-#include "FancyLog.h" // FancyLog class
+#include "FancyLog.h" // Header file for the FancyLog class
 
 //¤=======================================================================================¤
 //| TODO: Battery logging                                                                 |
@@ -38,6 +39,15 @@ void setup() {
   Serial.begin(9600);
   dht.begin(); // Initialize DHT-22 sensor
 
+
+// ### ### ### ### TEST ### ### ### ###
+  fancyLog.toSerial("FancyLog test 1");
+  fancyLog.toSerial("FancyLog test 2", INFO);
+  fancyLog.toSerial("FancyLog test 3", WARNING);
+  fancyLog.toSerial("FancyLog test 4", ERROR);
+// ### ### ### ### TEST ### ### ### ###
+
+
   // Attempt WiFi connection
   connectWiFi();
 
@@ -47,19 +57,10 @@ void setup() {
   // Sync time using NTP
   setSyncProvider(getNtpTime);
   if (timeStatus() == timeSet) {
-    fancyLog.logToSerial("Time synchronized");
+    fancyLog.toSerial("Time synchronized", INFO);
   } else {
-    fancyLog.logToSerial("Failed to synchronize time");
+    fancyLog.toSerial("Failed to synchronize time", WARNING);
   }
-
-
-
-  // ### TEST ###
-  fancyLog.logToSerial("FancyLog test 1");
-  fancyLog.logToSerial("FancyLog test 2", INFO);
-  fancyLog.logToSerial("FancyLog test 3", WARNING);
-  fancyLog.logToSerial("FancyLog test 4", ERROR);
-  // ############
 
 // REGISTER PACKET TEST
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -92,12 +93,12 @@ void loop() {
     float humidity = dht.readHumidity();
 
     if (isnan(temperature) || isnan(humidity)) {
-      fancyLog.logToSerial("Failed to read sensor");
+      fancyLog.toSerial("Failed to read sensor", ERROR);
       return;
     }
 
-    fancyLog.logToSerial("Temperature: " + String(temperature));
-    fancyLog.logToSerial("Humidity: " + String(humidity));
+    fancyLog.toSerial("Temperature: " + String(temperature));
+    fancyLog.toSerial("Humidity: " + String(humidity));
 
     // Build JSON string for data packet
     StaticJsonDocument<256> jsonDoc;
@@ -114,7 +115,7 @@ void loop() {
 
   // Monitor WiFi connection and try to reconnect if lost
   if (WiFi.status() != WL_CONNECTED) {
-    fancyLog.logToSerial("WiFi disconnected. Attempting to reconnect...");
+    fancyLog.toSerial("WiFi disconnected. Attempting to reconnect...", WARNING);
     connectWiFi();
   }
 }
@@ -123,7 +124,7 @@ void loop() {
 //| WiFi Connection Function |
 //¤==========================¤============================================================¤
 void connectWiFi() {
-  fancyLog.logToSerial("Attempting WiFi connection to " + String(WIFI_SSID));
+  fancyLog.toSerial("Attempting WiFi connection to " + String(WIFI_SSID), INFO);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   
   unsigned long startAttemptTime = millis();
@@ -133,11 +134,13 @@ void connectWiFi() {
   }
   
   if (WiFi.status() == WL_CONNECTED) {
-    fancyLog.logToSerial("WiFi connected successfully");
-    fancyLog.logToSerial("Got IP: " + WiFi.localIP().toString());
-    fancyLog.logToSerial("Signal strength: " + String(WiFi.RSSI()));
+    Serial.print("\n");
+    fancyLog.toSerial("WiFi connected successfully");
+    fancyLog.toSerial("Got IP: " + WiFi.localIP().toString());
+    fancyLog.toSerial("Signal strength: " + String(WiFi.RSSI()));
   } else {
-    fancyLog.logToSerial("WiFi connection failed, will retry later");
+    Serial.print("\n");
+    fancyLog.toSerial("WiFi connection failed, will retry again later", WARNING);
   }
 }
 
@@ -164,7 +167,7 @@ time_t getNtpTime() { // Retrieve the current time from the NTP server
 
   int cb = ntpUDP.parsePacket();
   if (!cb) {
-    fancyLog.logToSerial("No NTP packet received");
+    fancyLog.toSerial("No NTP packet received", WARNING);
     return 0;
   } else {
     ntpUDP.read(packetBuffer, NTP_PACKET_SIZE);
@@ -183,11 +186,11 @@ time_t getNtpTime() { // Retrieve the current time from the NTP server
 //¤============================¤==========================================================¤
 // Sends a HTTP POST request with a JSON string to a provided API endpoint
 void sendHttpPostRequest(String jsonPayload, String apiRoute) {
-  fancyLog.logToSerial("Sending data to server...");
-  fancyLog.logToSerial(jsonPayload); // Log the JSON payload
+  fancyLog.toSerial("Sending data to server...", INFO);
+  fancyLog.toSerial(jsonPayload); // Log the JSON payload
   
   if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-    fancyLog.logToSerial("Error: Failed to connect to server");
+    fancyLog.toSerial("Failed to connect to server", ERROR);
     return;
   }
  
@@ -208,7 +211,7 @@ void sendHttpPostRequest(String jsonPayload, String apiRoute) {
   unsigned long timeout = millis();
   while (wifiClient.available() == 0) {
     if (millis() - timeout > API_TIMEOUT) {
-      fancyLog.logToSerial("Error: Server response timed out.");
+      fancyLog.toSerial("Error: Server response timed out.");
       wifiClient.stop();
       return;
     }
@@ -233,10 +236,10 @@ void sendHttpPostRequest(String jsonPayload, String apiRoute) {
                 response.indexOf("409") > 0;
       
       if (success && response.indexOf("409") > 0) {
-        fancyLog.logToSerial("Device already registered");
+        fancyLog.toSerial("Device already registered");
       } 
       else if (success) {
-        fancyLog.logToSerial("Device registered successfully");
+        fancyLog.toSerial("Device registered successfully");
       }
 
   } else {
@@ -244,7 +247,7 @@ void sendHttpPostRequest(String jsonPayload, String apiRoute) {
     success = response.indexOf("200 OK") > 0 || response.indexOf("201 Created") > 0;
 
     if (success) {
-      fancyLog.logToSerial("Data sent successfully to " + apiRoute);
+      fancyLog.toSerial("Data sent successfully to " + apiRoute);
     }
   }
 

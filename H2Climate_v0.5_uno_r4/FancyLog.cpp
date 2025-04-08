@@ -1,43 +1,71 @@
 #include "FancyLog.h"
 
-//¤========================¤
-//| Fancy Logging Function |
-//¤========================¤==============================================================¤
-void FancyLog::logToSerial(String message) {
+//¤===========================¤
+//| FancyLog Public Functions |
+//¤===========================¤===========================================================¤
+void FancyLog::toSerial(String message) {
   String messageBorder = "";
-  String fullMessage = " " + message + " ";
-  int messageLength = fullMessage.length();
+  String paddedMessage = " " + message + " ";
+  int messageLength = paddedMessage.length();
 
   for (int i = 0; i < messageLength; i++) {
     messageBorder += "-";
   }
 
   Serial.println("¤" + messageBorder + "¤");
-  Serial.println("|" + fullMessage   + "|");
+  Serial.println("|" + paddedMessage + "|");
   Serial.println("¤" + messageBorder + "¤");
 }
 
-void FancyLog::logToSerial(String message, LogLevel level) {
-  char topBorderChar = getTopBorderChar(level);
-  char bottomBorderChar = getBottomBorderChar(level);
+void FancyLog::toSerial(String message, LogLevel level) {
+  //char topBorderChar = getTopBorderChar(level);
+  //char bottomBorderChar = getBottomBorderChar(level);
+  char borderChar = getBorderChar(level);
+  
+  //String levelString = getLevelString(level);
+  //String levelSegment = "[" + levelString + "]";
+  String levelSegment = "[" + String(getLevelString(level)) + "]";
+  
+  String paddedMessage = " " + message + " ";
 
-  String levelString = getLevelString(level);
-  String fullMessage = "[" + levelString + "] " + message + " ";
-  int messageLength = fullMessage.length();
-
-  String messageTopBorder = "";
-  String messageBottomBorder = "";
-
-  for (int i = 0; i < messageLength; i++) {
-    messageTopBorder += topBorderChar;
-    messageBottomBorder += bottomBorderChar;
+  // Determine the border length: we want it to be at least as long as the log message
+  // and long enough to fully display the levelSegment.
+  int contentLength = paddedMessage.length();
+  int segmentLength = levelSegment.length();
+  int borderLength = contentLength;
+  if (borderLength < segmentLength) {
+    borderLength = segmentLength;
   }
-
-  Serial.println("¤" + messageTopBorder    + "¤");
-  Serial.println("|" + fullMessage         + "|");
-  Serial.println("¤" + messageBottomBorder + "¤");
+  
+  // Build the top border with the levelSegment centered
+  int remaining = borderLength - segmentLength;
+  int leftCount  = remaining / 2;
+  int rightCount = remaining - leftCount;
+  
+  String borderTop = "";
+  for (int i = 0; i < leftCount; i++) {
+    borderTop += borderChar;
+  }
+  borderTop += levelSegment;
+  for (int i = 0; i < rightCount; i++) {
+    borderTop += borderChar;
+  }
+  
+  // Build a bottom border (without the level string) with the same borderLength.
+  String borderBottom = "";
+  for (int i = 0; i < borderLength; i++) {
+    borderBottom += borderChar;
+  }
+  
+  // Output the logging result with decorative borders.
+  Serial.println("¤" + borderTop     + "¤");
+  Serial.println("|" + paddedMessage + "|");
+  Serial.println("¤" + borderBottom  + "¤");
 }
 
+//¤============================¤
+//| FancyLog Private Functions |
+//¤============================¤==========================================================¤
 String FancyLog::getLevelString(LogLevel level) {
   switch (level) {
     case INFO: return "INFO";
@@ -47,19 +75,10 @@ String FancyLog::getLevelString(LogLevel level) {
   }
 }
 
-char FancyLog::getTopBorderChar(LogLevel level) {
+char FancyLog::getBorderChar(LogLevel level) {
   switch (level) {
-    case INFO: return '=';
-    case WARNING: return 'v';
-    case ERROR: return '\\';
-    default: return '-';
-  }
-}
-
-char FancyLog::getBottomBorderChar(LogLevel level) {
-  switch (level) {
-    case INFO: return '=';
-    case WARNING: return '^';
+    case INFO: return '~';
+    case WARNING: return '=';
     case ERROR: return '/';
     default: return '-';
   }
