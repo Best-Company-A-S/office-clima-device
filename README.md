@@ -184,22 +184,3 @@ Data is sent using simple JSON packets:
   "timestamp": 1649276543
 }
 ```
-
-## ⚙️ Troubleshooting
-
-- **Device shows sad face**: Check WiFi connection or sensor wiring
-- **No data on server**: Verify server URL and port in params.h
-- **Incorrect timestamps**: Check NTP server configuration
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Contributors
-
-- [Your Name](https://github.com/yourusername)
-
-## 🙏 Acknowledgements
-
-- [Arduino Team](https://www.arduino.cc/) for the excellent hardware and libraries
-- [Next.js](https://nextjs.org/) for the server framework
