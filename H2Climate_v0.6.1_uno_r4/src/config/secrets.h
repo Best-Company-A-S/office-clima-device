@@ -1,7 +1,7 @@
 #ifndef SECRETS_H
 #define SECRETS_H
 
-#define WIFI_SSID_VALUE "SSID_HERE"
-#define WIFI_PASS_VALUE "PASSWORD_HERE"
+#define WIFI_SSID "DEV"
+#define WIFI_PASS "Kaffe10ko"
 
 #endif 
