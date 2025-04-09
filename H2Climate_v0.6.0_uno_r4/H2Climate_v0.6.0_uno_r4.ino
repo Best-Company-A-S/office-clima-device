@@ -6,6 +6,7 @@
 #include "secrets.h" // Contains WiFi credentials
 #include "params.h" // Contains environment parameters
 #include "Arduino_LED_Matrix.h" // For the built-in LED matrix
+#include <ArduinoOTA.h> // Add ArduinoOTA support
 
 //¤=======================================================================================¤
 //| TODO: Battery logging                                                                 |
@@ -81,6 +82,9 @@ void setup() {
     logToSerial("Failed to synchronize time");
   }
 
+  // Initialize ArduinoOTA with basic configuration
+  ArduinoOTA.begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS, InternalStorage);
+  
   // Register device with server
   StaticJsonDocument<256> jsonDoc;
   jsonDoc["deviceId"] = DEVICE_ID;
@@ -102,6 +106,9 @@ void setup() {
 //| Runtime Loop |
 //¤==============¤========================================================================¤
 void loop() {
+  // Handle potential OTA updates from Arduino IDE
+  ArduinoOTA.poll();
+
   unsigned long currentMillis = millis();
   unsigned long timeUntilNextReading = 0;
   
@@ -122,37 +129,7 @@ void loop() {
     }
   }
 
-  // Check if it's time to take a reading
-  if (currentMillis - previousMillis > LOOP_INTERVAL) {
-    previousMillis = currentMillis;
-    
-    logToSerial("Taking sensor readings");
-
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
-
-    if (isnan(temperature) || isnan(humidity)) {
-      logToSerial("Failed to read sensor");
-      showSadFace();  // Show sad face for sensor failure
-      return;
-    }
-
-    logToSerial("Temp: " + String(temperature) + "°C, Humidity: " + String(humidity) + "%");
-
-    // Build JSON string for data packet
-    StaticJsonDocument<256> jsonDoc;
-    jsonDoc["deviceId"] = DEVICE_ID;
-    jsonDoc["temperature"] = temperature;
-    jsonDoc["humidity"] = humidity;
-    jsonDoc["timestamp"] = now();
-
-    String packetData;
-    serializeJson(jsonDoc, packetData);
-
-    sendHttpPostRequest(packetData, API_DATA_ROUTE);
-  }
-
-  // Check for firmware updates periodically
+  // Check for firmware updates periodically using your API
   if (currentMillis - previousUpdateCheckMillis > CHECK_INTERVAL) {
     previousUpdateCheckMillis = currentMillis;
     checkForUpdates();
@@ -401,132 +378,231 @@ void checkForUpdates() {
     return;
   }
 
-  // Prepare the URL with query parameters
   String updateUrl = "/api/firmware/check?deviceId=" + String(DEVICE_ID) + 
                     "&currentVersion=" + String(FIRMWARE_VERSION) + 
                     "&modelType=" + String(MODEL_TYPE);
   
-  logToSerial("Connecting to update server: " + String(SERVER_URL) + ":" + String(SERVER_PORT));
+  logToSerial("=== UPDATE CHECK REQUEST ===");
+  logToSerial("Target: " + String(SERVER_URL) + ":" + String(SERVER_PORT));
+  logToSerial("Method: GET");
+  logToSerial("Path: " + updateUrl);
   
-  // Try to connect to server
   if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
     logToSerial("Failed to connect to update server");
     showSadFace();
     return;
   }
   
-  logToSerial("Connected to server, sending update check request");
-  
-  // Building HTTP GET request
   String httpRequest =
     "GET "             + updateUrl + " HTTP/1.1"      + "\r\n" +
     "Host: "           + String(SERVER_URL)           + "\r\n" +
     "Connection: "     + "close"                      + "\r\n\r\n";
   
-  // Log the request URL (but not headers to keep logs cleaner)
-  logToSerial("Request URL: " + updateUrl);
-    
   wifiClient.print(httpRequest);
   
   // Wait for response
   unsigned long timeout = millis();
-  logToSerial("Waiting for server response...");
-  
   while (wifiClient.available() == 0) {
     if (millis() - timeout > API_TIMEOUT) {
-      logToSerial("Update check timed out after " + String(API_TIMEOUT/1000) + " seconds");
+      logToSerial("Update check timed out");
       wifiClient.stop();
       showSadFace();
       return;
     }
   }
+
+  // Read the entire response first
+  String fullResponse = "";
+  timeout = millis();
   
-  logToSerial("Response received, processing...");
-  
-  // Skip HTTP headers and capture status code
-  String statusLine = "";
-  String line;
-  bool headersParsed = false;
-  
-  do {
-    line = wifiClient.readStringUntil('\n');
-    if (statusLine.length() == 0 && line.startsWith("HTTP")) {
-      statusLine = line;
-      logToSerial("Server response: " + statusLine);
+  while (millis() - timeout < API_TIMEOUT) {
+    while (wifiClient.available()) {
+      char c = wifiClient.read();
+      fullResponse += c;
     }
-    if (line == "\r") {
-      headersParsed = true;
+    
+    if (!wifiClient.connected()) {
+      break;
     }
-  } while (!headersParsed);
-  
-  // Read the response body
-  String response = wifiClient.readString();
-  logToSerial("Raw response: " + response);
+    
+    delay(10);
+  }
   
   wifiClient.stop();
   
-  // Parse JSON response
+  logToSerial("=== FULL RESPONSE ===");
+  logToSerial(fullResponse);
+  
+  // Find the start of JSON data (after headers)
+  int jsonStart = fullResponse.indexOf("\r\n\r\n");
+  if (jsonStart == -1) {
+    logToSerial("No JSON data found in response");
+    return;
+  }
+  
+  // Extract just the JSON part and clean it
+  String jsonBody = fullResponse.substring(jsonStart + 4);
+  
+  // Find the first '{' and last '}'
+  int firstBrace = jsonBody.indexOf('{');
+  int lastBrace = jsonBody.lastIndexOf('}');
+  
+  if (firstBrace == -1 || lastBrace == -1) {
+    logToSerial("Invalid JSON format - missing braces");
+    return;
+  }
+  
+  // Extract only the JSON object
+  jsonBody = jsonBody.substring(firstBrace, lastBrace + 1);
+  jsonBody.trim();
+  
+  logToSerial("=== CLEANED JSON BODY ===");
+  logToSerial(jsonBody);
+  
+  // Try parsing the JSON
   StaticJsonDocument<512> jsonDoc;
-  DeserializationError error = deserializeJson(jsonDoc, response);
+  DeserializationError error = deserializeJson(jsonDoc, jsonBody);
   
   if (error) {
-    logToSerial("Failed to parse update response: " + String(error.c_str()));
-    logToSerial("Response that failed to parse: " + response);
+    logToSerial("JSON Parse Error: " + String(error.c_str()));
+    logToSerial("JSON Body Length: " + String(jsonBody.length()));
+    logToSerial("First 50 chars: " + jsonBody.substring(0, 50));
     showSadFace();
     return;
   }
   
-  logToSerial("Successfully parsed JSON response");
-  
-  // Check if update is available
+  // Extract update information
   updateAvailable = jsonDoc["updateAvailable"].as<bool>();
   
   if (!updateAvailable) {
-    logToSerial("No updates available - you're running the latest version!");
+    String message = jsonDoc["message"] | "No updates available";
+    logToSerial(message);
     showHappyFace();
     return;
   }
   
   latestFirmwareVersion = jsonDoc["latestVersion"].as<String>();
   String releaseNotes = jsonDoc["releaseNotes"] | "No release notes provided";
+  int firmwareSize = jsonDoc["size"] | 0;
   
   logToSerial("=== UPDATE AVAILABLE ===");
   logToSerial("Current version: " + String(FIRMWARE_VERSION));
   logToSerial("Latest version: " + latestFirmwareVersion);
   logToSerial("Release notes: " + releaseNotes);
+  logToSerial("Firmware size: " + String(firmwareSize) + " bytes");
   
-  // Check if auto-update is triggered
-  autoUpdateTriggered = jsonDoc["autoUpdateTriggered"].as<bool>();
+  // Use the correct download API endpoint
+  String downloadUrl = "/api/firmware/download?deviceId=" + String(DEVICE_ID) + 
+                      "&version=" + latestFirmwareVersion +
+                      "&modelType=" + String(MODEL_TYPE);
   
-  if (autoUpdateTriggered) {
-    logToSerial("Auto-update was triggered by server");
-    logToSerial("Since this is a UNO R4 WiFi, manual update is required:");
-    logToSerial("1. Download new firmware from dashboard");
-    logToSerial("2. Open Arduino IDE");
-    logToSerial("3. Select correct board and port");
-    logToSerial("4. Upload new firmware using Arduino IDE");
-    showUpdateAvailable();
-    
-    // Report update status
-    StaticJsonDocument<256> statusDoc;
-    statusDoc["deviceId"] = DEVICE_ID;
-    statusDoc["firmwareStatus"] = "UPDATE_PENDING";
-    statusDoc["currentVersion"] = FIRMWARE_VERSION;
-    statusDoc["targetVersion"] = latestFirmwareVersion;
-    
-    String statusData;
-    serializeJson(statusDoc, statusData);
-    
-    logToSerial("Notifying server of pending update status");
-    if (sendHttpPostRequest(statusData, "/api/devices/" + String(DEVICE_ID))) {
-      logToSerial("Successfully notified server of pending update");
-    } else {
-      logToSerial("Failed to notify server of pending update");
+  logToSerial("Starting firmware download...");
+  logToSerial("Download URL: " + downloadUrl);
+  
+  // Connect to server for download
+  if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
+    logToSerial("Failed to connect to download server");
+    return;
+  }
+  
+  // Request the firmware file
+  String downloadRequest = 
+    "GET " + downloadUrl + " HTTP/1.1\r\n" +
+    "Host: " + String(SERVER_URL) + "\r\n" +
+    "Connection: close\r\n\r\n";
+  
+  logToSerial("Sending download request...");
+  wifiClient.print(downloadRequest);
+  
+  // Wait for response
+  timeout = millis();
+  while (wifiClient.available() == 0) {
+    if (millis() - timeout > API_TIMEOUT) {
+      logToSerial("Firmware download timed out");
+      wifiClient.stop();
+      return;
     }
   }
   
-  // Final update check summary
-  logToSerial("=== UPDATE CHECK COMPLETE ===");
+  // Read and log the headers
+  logToSerial("=== DOWNLOAD RESPONSE HEADERS ===");
+  String contentLength = "";
+  while (wifiClient.available()) {
+    String line = wifiClient.readStringUntil('\n');
+    logToSerial(line);
+    if (line.startsWith("Content-Length: ")) {
+      contentLength = line.substring(16);
+      // Verify the content length matches expected firmware size
+      if (contentLength.toInt() != firmwareSize) {
+        logToSerial("Warning: Content length (" + contentLength + ") differs from expected size (" + String(firmwareSize) + ")");
+      }
+    }
+    if (line == "\r") {
+      break;
+    }
+  }
+
+  if (firmwareSize <= 0) {
+    logToSerial("Invalid firmware size");
+    wifiClient.stop();
+    return;
+  }
+  
+  // Start the OTA update
+  if (InternalStorage.open(firmwareSize)) {
+    logToSerial("Started firmware update process");
+    logToSerial("Expected size: " + String(firmwareSize) + " bytes");
+    
+    // Read the firmware byte by byte
+    int totalRead = 0;
+    
+    while (wifiClient.available() && totalRead < firmwareSize) {
+      uint8_t b = wifiClient.read();
+      if (InternalStorage.write(b) != 1) {
+        logToSerial("Error writing to internal storage");
+        wifiClient.stop();
+        return;
+      }
+      totalRead++;
+      
+      if (totalRead % 1024 == 0) {
+        logToSerial("Downloaded: " + String(totalRead) + " bytes");
+        logToSerial("Progress: " + String((totalRead * 100) / firmwareSize) + "%");
+      }
+    }
+    
+    InternalStorage.close(); // No need to check return value, it's void
+    
+    if (totalRead == firmwareSize) {
+      logToSerial("Firmware downloaded successfully!");
+      logToSerial("Total bytes: " + String(totalRead));
+      logToSerial("Applying update...");
+      
+      // Notify server about the update
+      StaticJsonDocument<256> statusDoc;
+      statusDoc["deviceId"] = DEVICE_ID;
+      statusDoc["firmwareStatus"] = "UPDATING";
+      statusDoc["currentVersion"] = FIRMWARE_VERSION;
+      statusDoc["targetVersion"] = latestFirmwareVersion;
+      
+      String statusData;
+      serializeJson(statusDoc, statusData);
+      sendHttpPostRequest(statusData, "/api/devices/" + String(DEVICE_ID));
+      
+      delay(1000); // Give time for the status to be sent
+      
+      logToSerial("Restarting device to apply update...");
+      InternalStorage.apply(); // This will restart the device
+    } else {
+      logToSerial("Firmware download incomplete!");
+      logToSerial("Expected: " + String(firmwareSize) + " bytes");
+      logToSerial("Received: " + String(totalRead) + " bytes");
+    }
+  } else {
+    logToSerial("Could not open internal storage for writing");
+  }
+  
+  wifiClient.stop();
 }
 
 //¤========================¤
