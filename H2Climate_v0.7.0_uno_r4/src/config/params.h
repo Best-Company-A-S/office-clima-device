@@ -4,7 +4,7 @@
 // Device Configuration
 // DEVICE_ID_VALUE is no longer needed as it's generated from MAC address
 #define MODEL_TYPE_VALUE "Arduino_UNO_R4_WiFi"
-#define FIRMWARE_VERSION_VALUE "V0.6.3"
+#define FIRMWARE_VERSION_VALUE "V0.7.0"
 
 // Server Configuration
 #define SERVER_URL_VALUE "10.106.187.35"
