@@ -1,5 +1,5 @@
-#ifndef FancyLog_h
-#define FancyLog_h
+#ifndef FANCYLOG_H
+#define FANCYLOG_H
 
 #include <Arduino.h>
 
