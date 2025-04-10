@@ -1,0 +1,207 @@
+/*
+ * H2Climate Device Firmware v0.6.3
+ * For Arduino UNO R4 WiFi
+ * 
+ * This firmware provides temperature and humidity monitoring with
+ * automatic firmware updates, LED matrix status display, and battery monitoring.
+ */
+
+#include "src/config/Config.h"
+#include "src/display/DisplayManager.h"
+#include "src/network/NetworkManager.h"
+#include "src/sensors/SensorManager.h"
+#include "src/sensors/BatteryMonitor.h"
+#include "src/utils/Logger.h"
+#include "src/config/secrets.h"
+#include "src/config/params.h"
+
+//¤=======================================================================================¤
+//| TODO: Add sound sensor                                                               |
+//| TODO: Changeable settings                                                            |
+//| TODO: Use MAC address to make a unique DEVICE_ID                                     |
+//| TODO: Add warning triggers at certain temperatures and humidities                    |
+//| TODO: Store more sensor data before sending a packet to reduce packet spam           |
+//¤=======================================================================================¤
+
+// Global objects
+Logger logger;
+DisplayManager display;
+NetworkManager network(display, logger);
+SensorManager sensors(logger);
+BatteryMonitor battery(logger);
+
+// Timing variables
+unsigned long previousMillis = 0;
+unsigned long previousUpdateCheckMillis = 0;
+unsigned long previousBatteryLogMillis = 0;
+const unsigned long BATTERY_LOG_INTERVAL = 10000; // Check battery every 10 seconds for debugging
+
+// Data collection variables
+const int DATA_BUFFER_SIZE = 1;  // Number of readings to store before sending
+int dataCount = 0;
+struct SensorData {
+  float temperature;
+  float humidity;
+  float batteryVoltage;
+  int batteryPercentage;
+  int batteryTimeRemaining;
+  unsigned long timestamp;
+};
+SensorData dataBuffer[DATA_BUFFER_SIZE];
+
+void setup() {
+  // Initialize components
+  logger.begin(9600);
+  logger.logWithBorder("Starting H2Climate Device");
+  logger.logWithBorder("Device ID: " + String(DEVICE_ID));
+
+  // Initialize LED matrix
+  display.begin();
+  display.showNeutralFace();  // Show neutral face during setup
+
+  // Initialize sensors
+  logger.logWithBorder("Initializing sensors");
+  sensors.begin();
+  
+  // Initialize battery monitoring
+  logger.logWithBorder("Initializing battery monitoring");
+  battery.begin();
+
+  // Connect to network after sensors are initialized
+  network.begin();
+
+  // Register device with server
+  StaticJsonDocument<256> jsonDoc;
+  jsonDoc["deviceId"] = DEVICE_ID;
+  jsonDoc["modelType"] = MODEL_TYPE;
+  jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
+
+  String registerData;
+  serializeJson(jsonDoc, registerData);
+  network.sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
+
+  // Initial update check
+  network.checkForUpdates();
+  logger.logWithBorder("Setup complete");
+}
+
+void loop() {
+  // Handle OTA updates
+  network.pollOTA();
+
+  unsigned long currentMillis = millis();
+  unsigned long timeUntilNextReading = 0;
+
+  // Check WiFi connection
+  if (!network.isConnected()) {
+    display.showSadFace();
+    logger.logWithBorder("WiFi disconnected. Reconnecting...");
+    network.connectWiFi();
+  }
+
+  // Calculate time until next reading
+  if (currentMillis - previousMillis < LOOP_INTERVAL) {
+    timeUntilNextReading = LOOP_INTERVAL - (currentMillis - previousMillis);
+
+    // Every 10 seconds, show time remaining until next data transmission
+    if (timeUntilNextReading % 10000 < 100) {
+      logger.log("Next transmission in " + String(timeUntilNextReading / 1000) + "s");
+    }
+  }
+
+  // Regular sensor readings and data transmission
+  if (currentMillis - previousMillis >= LOOP_INTERVAL) {
+    previousMillis = currentMillis;
+
+    logger.logWithBorder("Taking sensor readings");
+
+    // Read sensor data
+    float temperature = sensors.readTemperature();
+    float humidity = sensors.readHumidity();
+    float batteryVoltage = battery.readVoltage();
+    int batteryPercentage = battery.readPercentage();
+    int batteryTimeRemaining = battery.estimateTimeRemaining();
+
+    if (isnan(temperature) || isnan(humidity)) {
+      logger.logWithBorder("Failed to read sensor");
+      display.showSadFace();
+      return;
+    }
+
+    // Display with consistent decimal places
+    logger.logWithBorder("Temp: " + String(temperature, 1) + "°C, Humidity: " + String(humidity, 1) + "%");
+
+    // Store in buffer
+    dataBuffer[dataCount] = {
+      temperature,
+      humidity,
+      batteryVoltage,
+      batteryPercentage,
+      batteryTimeRemaining,
+      now()  // Use Unix timestamp from TimeLib instead of millis()
+    };
+    dataCount++;
+
+    // If buffer is full, send data
+    if (dataCount >= DATA_BUFFER_SIZE) {
+      sendBufferedData();
+      dataCount = 0;
+    }
+
+    // Show happy face unless battery is low
+    if (battery.isLowBattery()) {
+      display.showNeutralFace(); // Use neutral face for low battery
+    } else {
+      display.showHappyFace();
+    }
+  }
+
+  // Log battery status periodically
+  if (currentMillis - previousBatteryLogMillis >= BATTERY_LOG_INTERVAL) {
+    previousBatteryLogMillis = currentMillis;
+    battery.logStatus();
+  }
+
+  // Check for updates periodically
+  if (currentMillis - previousUpdateCheckMillis >= CHECK_INTERVAL) {
+    previousUpdateCheckMillis = currentMillis;
+    network.checkForUpdates();
+  }
+}
+
+void sendBufferedData() {
+  // Get the values we're sending
+  float temp = dataBuffer[0].temperature;
+  float hum = dataBuffer[0].humidity;
+  float batteryVoltage = dataBuffer[0].batteryVoltage;
+  int batteryPercentage = dataBuffer[0].batteryPercentage;
+  int batteryTimeRemaining = dataBuffer[0].batteryTimeRemaining;
+  unsigned long timestamp = dataBuffer[0].timestamp;
+
+  // Log battery data before sending to verify
+  logger.log("Battery data to send - Voltage: " + String(batteryVoltage, 3) + 
+             "V, Percentage: " + String(batteryPercentage) + 
+             "%, Time remaining: " + String(batteryTimeRemaining) + " minutes");
+
+  // Create the JSON document
+  StaticJsonDocument<384> jsonDoc;
+  jsonDoc["deviceId"] = DEVICE_ID;
+  jsonDoc["temperature"] = temp;
+  jsonDoc["humidity"] = hum;
+  jsonDoc["batteryVoltage"] = batteryVoltage;
+  jsonDoc["batteryPercentage"] = batteryPercentage;
+  jsonDoc["batteryTimeRemaining"] = batteryTimeRemaining;
+  jsonDoc["timestamp"] = timestamp;
+
+  String sensorData;
+  serializeJson(jsonDoc, sensorData);
+
+  // Log the exact JSON format
+  logger.log("JSON Format: " + sensorData);
+
+  if (network.sendHttpPostRequest(sensorData, API_DATA_ROUTE)) {
+    logger.logWithBorder("Data sent successfully");
+  } else {
+    logger.logWithBorder("Failed to send data");
+  }
+}

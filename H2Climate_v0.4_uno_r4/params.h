@@ -1,5 +1,7 @@
 // Device details
-#define DEVICE_ID "6fe26f8eaf1e" // second device // Test ID
+
+#define DEVICE_ID "6fe26f8eaf7e" // second device // Test ID
+
 #define MODEL_TYPE "Arduino_UNO_R4_WiFi"
 #define FIRMWARE_VERSION "v0.4"
 
@@ -9,7 +11,8 @@
 
 // Server details
 // Using the Network IP shown in the Next.js console
-#define SERVER_URL "10.106.186.186"
+#define SERVER_URL "10.106.186.200"
+
 #define SERVER_PORT 3000
 // Make sure these API routes match your Next.js API routes
 #define API_DATA_ROUTE "/api/devices/readings"
