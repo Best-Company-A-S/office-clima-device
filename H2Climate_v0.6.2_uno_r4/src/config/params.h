@@ -2,12 +2,12 @@
 #define PARAMS_H
 
 // Device Configuration
-#define DEVICE_ID_VALUE "6fe26f8eaf7e"
+#define DEVICE_ID_VALUE "6fe26f8eaf1e"
 #define MODEL_TYPE_VALUE "Arduino_UNO_R4_WiFi"
 #define FIRMWARE_VERSION_VALUE "V0.6.2"
 
 // Server Configuration
-#define SERVER_URL_VALUE "192.168.20.23"
+#define SERVER_URL_VALUE "10.106.187.35"
 #define SERVER_PORT_VALUE 3000
 #define API_TIMEOUT_VALUE 10000
 #define API_REGISTER_ROUTE_VALUE "/api/device/register"
