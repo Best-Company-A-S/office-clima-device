@@ -5,6 +5,7 @@
 #include "DHT.h"
 #include "secrets.h" // Contains WiFi credentials
 #include "params.h" // Contains enviroment parameters
+#include "Arduino_LED_Matrix.h" // For the built-in LED matrix
 
 //¤=======================================================================================¤
 //| TODO: Battery logging                                                                 |
@@ -16,7 +17,13 @@
 //¤=======================================================================================¤
 
 DHT dht(DHT22_PIN, DHTTYPE);
-WiFiSSLClient wifiClient;
+WiFiClient wifiClient;
+ArduinoLEDMatrix matrix;
+
+// We'll use the built-in emoji frames for our status indicators
+#define HAPPY_FACE LEDMATRIX_EMOJI_HAPPY
+#define SAD_FACE LEDMATRIX_EMOJI_SAD
+#define NEUTRAL_FACE LEDMATRIX_EMOJI_BASIC
 
 // NTP Settings
 const char* ntpServer = "pool.ntp.org";
@@ -31,6 +38,12 @@ unsigned long previousMillis = 0;
 //¤================¤======================================================================¤
 void setup() {
   Serial.begin(9600);
+  matrix.begin();
+  showNeutralFace(); // Show neutral face during setup
+  
+  logToSerial("Starting H2Climate Device");
+  logToSerial("Device ID: " + String(DEVICE_ID));
+  
   dht.begin(); // Initialize DHT-22 sensor
 
   // Attempt WiFi connection
@@ -47,10 +60,7 @@ void setup() {
     logToSerial("Failed to synchronize time");
   }
 
-// REGISTER PACKET TEST
-//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-  // Build JSON string for register packet
+  // Register device with server
   StaticJsonDocument<256> jsonDoc;
   jsonDoc["deviceId"] = DEVICE_ID;
   jsonDoc["modelType"] = MODEL_TYPE;
@@ -60,8 +70,32 @@ void setup() {
   serializeJson(jsonDoc, registerData);
 
   sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
+  
+  logToSerial("Setup complete");
+}
 
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Helper functions for LED Matrix
+void showHappyFace() {
+  matrix.loadFrame(HAPPY_FACE);
+}
+
+void showSadFace() {
+  matrix.loadFrame(SAD_FACE);
+}
+
+void showNeutralFace() {
+  matrix.loadFrame(NEUTRAL_FACE);
+}
+
+// Add new animation function for retrying
+void showRetryAnimation() {
+  // Show a sequence of faces to indicate retrying
+  for (int i = 0; i < RETRY_ANIMATION_BLINKS; i++) {
+    showNeutralFace();
+    delay(RETRY_ANIMATION_ON_TIME);
+    matrix.clear();
+    delay(RETRY_ANIMATION_OFF_TIME);
+  }
 }
 
 //¤==============¤
@@ -69,39 +103,54 @@ void setup() {
 //¤==============¤========================================================================¤
 void loop() {
   unsigned long currentMillis = millis();
+  unsigned long timeUntilNextReading = 0;
+  
+  // Check WiFi status and update face accordingly
+  if (WiFi.status() != WL_CONNECTED) {
+    showSadFace();
+    logToSerial("WiFi disconnected. Reconnecting...");
+    connectWiFi();
+  }
+  
+  // Calculate time until next reading
+  if (currentMillis - previousMillis < LOOP_INTERVAL) {
+    timeUntilNextReading = LOOP_INTERVAL - (currentMillis - previousMillis);
+    
+    // Every 10 seconds, show time remaining until next data transmission
+    if (timeUntilNextReading % 10000 < 100) {
+      Serial.println("Next transmission in " + String(timeUntilNextReading / 1000) + "s");
+    }
+  }
 
   // Check if it's time to take a reading
   if (currentMillis - previousMillis > LOOP_INTERVAL) {
     previousMillis = currentMillis;
+    
+    logToSerial("Taking sensor readings");
 
     float temperature = dht.readTemperature();
     float humidity = dht.readHumidity();
 
     if (isnan(temperature) || isnan(humidity)) {
       logToSerial("Failed to read sensor");
+      showSadFace();  // Show sad face for sensor failure
       return;
     }
 
-    logToSerial("Temperature: " + String(temperature));
-    logToSerial("Humidity: " + String(humidity));
+    logToSerial("Temp: " + String(temperature) + "°C, Humidity: " + String(humidity) + "%");
 
     // Build JSON string for data packet
     StaticJsonDocument<256> jsonDoc;
     jsonDoc["deviceId"] = DEVICE_ID;
     jsonDoc["temperature"] = temperature;
     jsonDoc["humidity"] = humidity;
-    jsonDoc["timestamp"] = now();  // Time in seconds since epoch
+    jsonDoc["timestamp"] = now();
 
     String packetData;
     serializeJson(jsonDoc, packetData);
 
     sendHttpPostRequest(packetData, API_DATA_ROUTE);
-  }
-
-  // Monitor WiFi connection and try to reconnect if lost
-  if (WiFi.status() != WL_CONNECTED) {
-    logToSerial("WiFi disconnected. Attempting to reconnect...");
-    connectWiFi();
+    // Note: sendHttpPostRequest now handles all face displays internally
   }
 }
 
@@ -109,21 +158,40 @@ void loop() {
 //| WiFi Connection Function |
 //¤==========================¤============================================================¤
 void connectWiFi() {
-  logToSerial("Attempting WiFi connection to " + String(WIFI_SSID));
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  logToSerial("Connecting to WiFi: " + String(WIFI_SSID));
+  showNeutralFace(); // Show neutral face while attempting to connect
   
-  unsigned long startAttemptTime = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < WIFI_TIMEOUT) {
-    Serial.print(".");
+  // Disconnect if already connected
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFi.disconnect();
     delay(1000);
   }
   
+  // Try to connect
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  
+  unsigned long startAttemptTime = millis();
+  int attempts = 0;
+  
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < WIFI_TIMEOUT) {
+    Serial.print(".");
+    delay(1000);
+    
+    // If taking too long, try reconnecting every 5 seconds
+    if (attempts++ > 5) {
+      WiFi.disconnect();
+      delay(500);
+      WiFi.begin(WIFI_SSID, WIFI_PASS);
+      attempts = 0;
+    }
+  }
+  
   if (WiFi.status() == WL_CONNECTED) {
-    logToSerial("WiFi connected successfully");
-    logToSerial("Got IP: " + WiFi.localIP().toString());
-    logToSerial("Signal strength: " + String(WiFi.RSSI()));
+    logToSerial("WiFi connected, IP: " + WiFi.localIP().toString());
+    showHappyFace(); // Show happy face when connected
   } else {
-    logToSerial("WiFi connection failed, will retry later");
+    logToSerial("WiFi connection failed");
+    showSadFace(); // Show sad face when connection fails
   }
 }
 
@@ -168,47 +236,143 @@ time_t getNtpTime() { // Retrieve the current time from the NTP server
 //| HTTP POST Request Function |
 //¤============================¤==========================================================¤
 // Sends a HTTP POST request with a JSON string to a provided API endpoint
-void sendHttpPostRequest(String jsonPayload, String apiRoute) {
-  logToSerial("Sending data to server...");
-  logToSerial(jsonPayload); // Log the JSON payload
-  
-  if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-    logToSerial("Error: Failed to connect to server");
-    return;
-  }
- 
-  // Building HTTP POST request
-  // TODO: Refactor this bit into it's own function
-  String httpRequest =
-    "POST "            + apiRoute + " HTTP/1.1"       + "\r\n" +
-    "Host: "           + String(SERVER_URL)           + "\r\n" +
-    "Content-Type: "   + "application/json"           + "\r\n" +
-    "Content-Length: " + String(jsonPayload.length()) + "\r\n" +
-    "Connection: "     + "close"                  + "\r\n\r\n" +
-    jsonPayload;
+bool sendHttpPostRequest(String jsonPayload, String apiRoute) {
+  int apiAttempts = 0;
+  bool success = false;
+
+  while (apiAttempts < MAX_API_ATTEMPTS && !success) {
+    if (apiAttempts > 0) {
+      logToSerial("Retry attempt " + String(apiAttempts) + " of " + String(MAX_API_ATTEMPTS - 1));
+      showRetryAnimation();
+    }
+
+    if (WiFi.status() != WL_CONNECTED) {
+      logToSerial("WiFi not connected. Reconnecting...");
+      showSadFace();
+      connectWiFi();
+      if (WiFi.status() != WL_CONNECTED) {
+        logToSerial("Failed to reconnect WiFi");
+        showSadFace();
+        return false;
+      }
+    }
+
+    // Try to connect to server
+    showNeutralFace();
+    int connectionAttempts = 0;
+    bool connected = false;
     
-  Serial.println(httpRequest + "\n"); // Log the HTTP request
-  wifiClient.print(httpRequest);
-  
-  // Wait for a response with a timeout defined by API_TIMEOUT
-  unsigned long timeout = millis();
-  while (wifiClient.available() == 0) {
-    if (millis() - timeout > API_TIMEOUT) {
-      logToSerial("Error: Server response timed out.");
+    while (!connected && connectionAttempts < MAX_SERVER_CONNECT_ATTEMPTS) {
+      if (wifiClient.connect(SERVER_URL, SERVER_PORT)) {
+        connected = true;
+      } else {
+        connectionAttempts++;
+        delay(RETRY_DELAY);
+      }
+    }
+    
+    if (!connected) {
+      logToSerial("Failed to connect to server");
+      apiAttempts++;
+      
+      // Show sad face if this was the last attempt
+      if (apiAttempts >= MAX_API_ATTEMPTS) {
+        logToSerial("Failed after " + String(MAX_API_ATTEMPTS) + " attempts");
+        showSadFace();
+        return false;
+      }
+      continue;
+    }
+   
+    // Building HTTP POST request
+    String httpRequest =
+      "POST "            + apiRoute + " HTTP/1.1"       + "\r\n" +
+      "Host: "           + String(SERVER_URL)           + "\r\n" +
+      "Content-Type: "   + "application/json"           + "\r\n" +
+      "Content-Length: " + String(jsonPayload.length()) + "\r\n" +
+      "Connection: "     + "close"                      + "\r\n\r\n" +
+      jsonPayload;
+    
+    wifiClient.print(httpRequest);
+    
+    // Wait for a response with a timeout defined by API_TIMEOUT
+    unsigned long timeout = millis();
+    bool responseReceived = false;
+    
+    while (millis() - timeout < API_TIMEOUT) {
+      if (wifiClient.available()) {
+        responseReceived = true;
+        break;
+      }
+      delay(10);
+    }
+
+    if (!responseReceived) {
+      logToSerial("Server response timed out");
       wifiClient.stop();
-      return;
+      apiAttempts++;
+      
+      // Show sad face if this was the last attempt
+      if (apiAttempts >= MAX_API_ATTEMPTS) {
+        logToSerial("Failed after " + String(MAX_API_ATTEMPTS) + " attempts");
+        showSadFace();
+        return false;
+      }
+      continue;
+    }
+    
+    // Read API response from the server
+    String response = "";
+    while (wifiClient.available()) {
+      char c = wifiClient.read();
+      response += c;
+    }
+    
+    // Close the connection to free resources
+    wifiClient.stop();
+    
+    // Check response status code
+    if (apiRoute == API_REGISTER_ROUTE) {
+      // For registration, accept both 200/201 (new registration) and 409 (already registered)
+      success = response.indexOf("200 OK") > 0 || 
+                response.indexOf("201 Created") > 0 || 
+                response.indexOf("409") > 0;
+      
+      if (success && response.indexOf("409") > 0) {
+        logToSerial("Device already registered");
+      } else if (success) {
+        logToSerial("Device registered successfully");
+      }
+    } else {
+      // For other endpoints, only accept 200/201
+      success = response.indexOf("200 OK") > 0 || response.indexOf("201 Created") > 0;
+      if (success) {
+        logToSerial("Data sent successfully to " + apiRoute);
+      }
+    }
+
+    if (!success) {
+      logToSerial("Error in server response");
+      apiAttempts++;
+      
+      // Show sad face if this was the last attempt
+      if (apiAttempts >= MAX_API_ATTEMPTS) {
+        logToSerial("Failed after " + String(MAX_API_ATTEMPTS) + " attempts");
+        showSadFace();
+        return false;
+      }
     }
   }
-  
-  // Read API response from the server
-  String response = "";
-  while (wifiClient.available()) {
-    response += (char)wifiClient.read();
+
+  // Final status indication
+  if (success) {
+    showHappyFace();
+    return true;
+  } else {
+    logToSerial("Failed after " + String(MAX_API_ATTEMPTS) + " attempts");
+    showSadFace();
+    return false;
   }
-  Serial.print("Response: " + response);
-  
-  // Close the connection to free resources
-  wifiClient.stop();
 }
 
 //¤========================¤
