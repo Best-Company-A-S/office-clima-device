@@ -1,5 +1,5 @@
 /*
- * H2Climate Device Firmware v0.7.0
+ * H2Climate Device Firmware v0.7.1
  * For Arduino UNO R4 WiFi
  * 
  * This firmware provides temperature and humidity monitoring with
@@ -11,7 +11,7 @@
 #include "src/network/NetworkManager.h"
 #include "src/sensors/SensorManager.h"
 #include "src/sensors/BatteryMonitor.h"
-#include "src/utils/Logger.h"
+#include "src/utils/FancyLog.h"
 #include "src/utils/DeviceIdentifier.h"
 #include "src/config/secrets.h"
 #include "src/config/params.h"
@@ -24,11 +24,11 @@
 //¤=======================================================================================¤
 
 // Global objects
-Logger logger;
+FancyLog fancyLog;
 DisplayManager display;
-NetworkManager network(display, logger);
-SensorManager sensors(logger);
-BatteryMonitor battery(logger);
+NetworkManager network(display, fancyLog);
+SensorManager sensors(fancyLog);
+BatteryMonitor battery(fancyLog);
 
 // Timing variables
 unsigned long previousMillis = 0;
@@ -51,24 +51,24 @@ SensorData dataBuffer[DATA_BUFFER_SIZE];
 
 void setup() {
   // Initialize components
-  logger.begin(9600);
-  logger.logWithBorder("Starting H2Climate Device");
+  fancyLog.begin(9600);
+  fancyLog.toSerial("Starting H2Climate Device", INFO);
   
   // Initialize device identifier
   DeviceIdentifier::initialize();
   DeviceIdentifier::printDeviceInfo();
-  logger.logWithBorder("Device ID: " + DeviceIdentifier::getDeviceId());
+  fancyLog.toSerial("Device ID: " + DeviceIdentifier::getDeviceId(), INFO);
 
   // Initialize LED matrix
   display.begin();
   display.showNeutralFace();  // Show neutral face during setup
 
   // Initialize sensors
-  logger.logWithBorder("Initializing sensors");
+  fancyLog.toSerial("Initializing sensors", INFO);
   sensors.begin();
   
   // Initialize battery monitoring
-  logger.logWithBorder("Initializing battery monitoring");
+  fancyLog.toSerial("Initializing battery monitoring", INFO);
   battery.begin();
 
   // Connect to network after sensors are initialized
@@ -86,7 +86,7 @@ void setup() {
 
   // Initial update check
   network.checkForUpdates();
-  logger.logWithBorder("Setup complete");
+  fancyLog.toSerial("Setup complete", INFO);
 }
 
 void loop() {
@@ -99,7 +99,7 @@ void loop() {
   // Check WiFi connection
   if (!network.isConnected()) {
     display.showSadFace();
-    logger.logWithBorder("WiFi disconnected. Reconnecting...");
+    fancyLog.toSerial("WiFi disconnected. Reconnecting...", WARNING);
     network.connectWiFi();
   }
 
@@ -109,7 +109,7 @@ void loop() {
 
     // Every 10 seconds, show time remaining until next data transmission
     if (timeUntilNextReading % 10000 < 100) {
-      logger.log("Next transmission in " + String(timeUntilNextReading / 1000) + "s");
+      fancyLog.toSerial("Next transmission in " + String(timeUntilNextReading / 1000) + "s");
     }
   }
 
@@ -117,7 +117,7 @@ void loop() {
   if (currentMillis - previousMillis >= LOOP_INTERVAL) {
     previousMillis = currentMillis;
 
-    logger.logWithBorder("Taking sensor readings");
+    fancyLog.toSerial("Taking sensor readings", INFO);
 
     // Read sensor data
     float temperature = sensors.readTemperature();
@@ -127,13 +127,13 @@ void loop() {
     int batteryTimeRemaining = battery.estimateTimeRemaining();
 
     if (isnan(temperature) || isnan(humidity)) {
-      logger.logWithBorder("Failed to read sensor");
+      fancyLog.toSerial("Failed to read sensor", ERROR);
       display.showSadFace();
       return;
     }
 
     // Display with consistent decimal places
-    logger.logWithBorder("Temp: " + String(temperature, 1) + "°C, Humidity: " + String(humidity, 1) + "%");
+    fancyLog.toSerial("Temp: " + String(temperature, 1) + "°C, Humidity: " + String(humidity, 1) + "%");
 
     // Store in buffer
     dataBuffer[dataCount] = {
@@ -183,7 +183,7 @@ void sendBufferedData() {
   unsigned long timestamp = dataBuffer[0].timestamp;
 
   // Log battery data before sending to verify
-  logger.log("Battery data to send - Voltage: " + String(batteryVoltage, 3) + 
+  fancyLog.toSerial("Battery data to send - Voltage: " + String(batteryVoltage, 3) +
              "V, Percentage: " + String(batteryPercentage) + 
              "%, Time remaining: " + String(batteryTimeRemaining) + " minutes");
 
@@ -201,11 +201,11 @@ void sendBufferedData() {
   serializeJson(jsonDoc, sensorData);
 
   // Log the exact JSON format
-  logger.log("JSON Format: " + sensorData);
+  fancyLog.toSerial("JSON Format: " + sensorData);
 
   if (network.sendHttpPostRequest(sensorData, API_DATA_ROUTE)) {
-    logger.logWithBorder("Data sent successfully");
+    fancyLog.toSerial("Data sent successfully", INFO);
   } else {
-    logger.logWithBorder("Failed to send data");
+    fancyLog.toSerial("Failed to send data", ERROR);
   }
 }

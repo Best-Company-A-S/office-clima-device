@@ -1,10 +1,10 @@
 #include "SensorManager.h"
 
-SensorManager::SensorManager(Logger& logger)
-    : logger(logger), dht(DHT22_PIN, DHTTYPE) {}
+SensorManager::SensorManager(FancyLog& fancyLog)
+    : fancyLog(fancyLog), dht(DHT22_PIN, DHTTYPE) {}
 
 void SensorManager::begin() {
-    logger.logWithBorder("Initializing DHT sensor");
+    fancyLog.toSerial("Initializing DHT sensor", INFO);
     dht.begin();
     
     // Give the sensor time to stabilize - this is critical
@@ -16,12 +16,12 @@ void SensorManager::begin() {
     float hum = dht.readHumidity();
     
     if (isnan(temp) || isnan(hum)) {
-        logger.logWithBorder("WARNING: Initial sensor reading failed, but continuing anyway");
+        fancyLog.toSerial("Initial sensor reading failed, but continuing anyway", WARNING);
     } else {
-        logger.log("Initial reading: Temp=" + String(temp) + "°C, Humidity=" + String(hum) + "%");
+        fancyLog.toSerial("Initial reading: Temp=" + String(temp) + "°C, Humidity=" + String(hum) + "%", INFO);
     }
     
-    logger.logWithBorder("DHT sensor initialized");
+    fancyLog.toSerial("DHT sensor initialized", INFO);
 }
 
 float SensorManager::readTemperature() {

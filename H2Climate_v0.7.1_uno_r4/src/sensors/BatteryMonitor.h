@@ -1,11 +1,11 @@
 #ifndef BATTERY_MONITOR_H
 #define BATTERY_MONITOR_H
 
-#include "../utils/Logger.h"
+#include "../utils/FancyLog.h"
 
 class BatteryMonitor {
 public:
-    BatteryMonitor(Logger& logger);
+    BatteryMonitor(FancyLog& fancyLog);
     void begin();
     float readVoltage();
     int readPercentage();
@@ -14,7 +14,7 @@ public:
     bool isLowBattery();
     
 private:
-    Logger& logger;
+    FancyLog& fancyLog;
     const int BATTERY_PIN = A0; // Analog pin for battery voltage reading
     
     // These are the actual voltage values of a 9V battery

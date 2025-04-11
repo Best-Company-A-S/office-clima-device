@@ -11,8 +11,9 @@ enum LogLevel {
 
 class FancyLog {
   public:
-    void toSerial(String message);
-    void toSerial(String message, LogLevel level);
+    void begin(unsigned long baudRate = 9600);
+    void toSerial(const String& message);
+    void toSerial(const String& message, LogLevel level);
 
   private:
     String getLevelString(LogLevel level);

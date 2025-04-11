@@ -3,12 +3,12 @@
 
 #include "../config/Config.h"
 #include "../display/DisplayManager.h"
-#include "../utils/Logger.h"
+#include "../utils/FancyLog.h"
 #include "OTAManager.h"
 
 class NetworkManager {
 public:
-    NetworkManager(DisplayManager& display, Logger& logger);
+    NetworkManager(DisplayManager& display, FancyLog& fancyLog);
     void begin();
     bool connectWiFi();
     bool sendHttpPostRequest(String jsonPayload, String apiRoute);
@@ -18,7 +18,7 @@ public:
 
 private:
     DisplayManager& display;
-    Logger& logger;
+    FancyLog& fancyLog;
     WiFiClient wifiClient;
     static WiFiUDP ntpUDP;
     static const char* ntpServer;

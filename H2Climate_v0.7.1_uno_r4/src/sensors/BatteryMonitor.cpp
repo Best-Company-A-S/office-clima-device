@@ -1,8 +1,8 @@
 #include "BatteryMonitor.h"
 #include <Arduino.h>
 
-BatteryMonitor::BatteryMonitor(Logger& logger)
-    : logger(logger) {}
+BatteryMonitor::BatteryMonitor(FancyLog& fancyLog)
+    : fancyLog(fancyLog) {}
 
 void BatteryMonitor::begin() {
     // Initialize battery monitoring pin
@@ -13,12 +13,12 @@ void BatteryMonitor::begin() {
     int percentage = readPercentage();
     int timeRemaining = estimateTimeRemaining();
     
-    logger.log("Initial battery reading: " + String(voltage, 2) + "V (actual ~" + 
+    fancyLog.toSerial("Initial battery reading: " + String(voltage, 2) + "V (actual ~" +
                String(voltage * VOLTAGE_TO_BATTERY, 1) + "V, " + 
-               String(percentage) + "%) - Est. " + String(timeRemaining) + " minutes remaining");
+               String(percentage) + "%) - Est. " + String(timeRemaining) + " minutes remaining", INFO);
                
     if (isLowBattery()) {
-        logger.logWithBorder("WARNING: LOW BATTERY");
+        fancyLog.toSerial("LOW BATTERY", WARNING);
     }
 }
 
@@ -37,9 +37,9 @@ float BatteryMonitor::readVoltage() {
     
     // Log raw voltage for debugging
     if (rawValue > 100) { // Only log reasonable values
-        logger.log("Battery ADC raw: " + String(rawValue) + ", Voltage: " + 
+        fancyLog.toSerial("Battery ADC raw: " + String(rawValue) + ", Voltage: " +
                   String(voltage, 3) + "V (actual ~" + 
-                  String(voltage * VOLTAGE_TO_BATTERY, 1) + "V)");
+                  String(voltage * VOLTAGE_TO_BATTERY, 1) + "V)", INFO);
     }
     
     return voltage;
@@ -80,20 +80,20 @@ void BatteryMonitor::logStatus() {
     int percentage = readPercentage();
     int timeRemaining = estimateTimeRemaining();
     
-    logger.logWithBorder("Battery Status");
-    logger.log("Measured voltage: " + String(voltage, 3) + "V");
-    logger.log("Estimated actual voltage: " + String(voltage * VOLTAGE_TO_BATTERY, 1) + "V");
-    logger.log("Charge: " + String(percentage) + "%");
+    fancyLog.toSerial("Battery Status", INFO);
+    fancyLog.toSerial("Measured voltage: " + String(voltage, 3) + "V");
+    fancyLog.toSerial("Estimated actual voltage: " + String(voltage * VOLTAGE_TO_BATTERY, 1) + "V");
+    fancyLog.toSerial("Charge: " + String(percentage) + "%");
     
     // Format the remaining time in hours and minutes
     int hours = timeRemaining / 60;
     int minutes = timeRemaining % 60;
     
-    logger.log("Est. time remaining: " + String(hours) + "h " + String(minutes) + "m");
+    fancyLog.toSerial("Est. time remaining: " + String(hours) + "h " + String(minutes) + "m", INFO);
     
     // Show low battery warning if below threshold
     if (isLowBattery()) {
-        logger.logWithBorder("WARNING: LOW BATTERY");
+        fancyLog.toSerial("LOW BATTERY", WARNING);
     }
 }
 

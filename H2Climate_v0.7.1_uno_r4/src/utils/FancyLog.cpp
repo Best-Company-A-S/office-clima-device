@@ -3,7 +3,12 @@
 //¤===========================¤
 //| FancyLog Public Functions |
 //¤===========================¤===========================================================¤
-void FancyLog::toSerial(String message) {
+void FancyLog::begin(unsigned long baudRate) {
+    Serial.begin(baudRate);
+}
+
+void FancyLog::toSerial(const String& message) {
+  /*
   String messageBorder = "";
   String paddedMessage = " " + message + " ";
   int messageLength = paddedMessage.length();
@@ -15,15 +20,13 @@ void FancyLog::toSerial(String message) {
   Serial.println("¤" + messageBorder + "¤");
   Serial.println("|" + paddedMessage + "|");
   Serial.println("¤" + messageBorder + "¤");
+  */
+  Serial.println(message);
 }
 
-void FancyLog::toSerial(String message, LogLevel level) {
-  //char topBorderChar = getTopBorderChar(level);
-  //char bottomBorderChar = getBottomBorderChar(level);
+void FancyLog::toSerial(const String& message, LogLevel level) {
   char borderChar = getBorderChar(level);
-  
-  //String levelString = getLevelString(level);
-  //String levelSegment = "[" + levelString + "]";
+
   String levelSegment = "[" + String(getLevelString(level)) + "]";
   
   String paddedMessage = " " + message + " ";

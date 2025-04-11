@@ -6,8 +6,8 @@
 WiFiUDP NetworkManager::ntpUDP;
 const char* NetworkManager::ntpServer = "pool.ntp.org";
 
-NetworkManager::NetworkManager(DisplayManager& display, Logger& logger)
-    : display(display), logger(logger), updateAvailable(false) {}
+NetworkManager::NetworkManager(DisplayManager& display, FancyLog& fancyLog)
+    : display(display), fancyLog(fancyLog), updateAvailable(false) {}
 
 void NetworkManager::begin() {
     // Initialize UDP socket for NTP
@@ -19,9 +19,9 @@ void NetworkManager::begin() {
     // Sync time using NTP
     setSyncProvider(NetworkManager::getNtpTime);
     if (timeStatus() == timeSet) {
-        logger.log("Time synchronized");
+        fancyLog.toSerial("Time synchronized");
     } else {
-        logger.log("Failed to synchronize time");
+        fancyLog.toSerial("Failed to synchronize time");
     }
     
     // Initialize OTA
@@ -33,7 +33,7 @@ void NetworkManager::pollOTA() {
 }
 
 bool NetworkManager::connectWiFi() {
-    logger.logWithBorder("Connecting to WiFi: " + String(WIFI_SSID));
+    fancyLog.toSerial("Connecting to WiFi: " + String(WIFI_SSID));
     display.showNeutralFace();
     
     if (WiFi.status() == WL_CONNECTED) {
@@ -65,11 +65,11 @@ bool NetworkManager::connectWiFi() {
     }
     
     if (WiFi.status() == WL_CONNECTED && WiFi.localIP()[0] != 0) {
-        logger.logWithBorder("WiFi connected, IP: " + WiFi.localIP().toString());
+        fancyLog.toSerial("WiFi connected, IP: " + WiFi.localIP().toString());
         display.showHappyFace();
         return true;
     } else {
-        logger.logWithBorder("WiFi connection failed");
+        fancyLog.toSerial("WiFi connection failed");
         display.showSadFace();
         return false;
     }
@@ -81,12 +81,12 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     
     while (apiAttempts < MAX_API_ATTEMPTS && !success) {
         if (apiAttempts > 0) {
-            logger.log("Retry attempt " + String(apiAttempts) + " of " + String(MAX_API_ATTEMPTS - 1));
+            fancyLog.toSerial("Retry attempt " + String(apiAttempts) + " of " + String(MAX_API_ATTEMPTS - 1));
             display.showRetryAnimation();
         }
         
         if (!isConnected()) {
-            logger.log("WiFi not connected. Reconnecting...");
+            fancyLog.toSerial("WiFi not connected. Reconnecting...");
             display.showSadFace();
             if (!connectWiFi()) {
                 return false;
@@ -95,7 +95,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
         
         display.showNeutralFace();
         if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-            logger.log("Failed to connect to server");
+            fancyLog.toSerial("Failed to connect to server");
             apiAttempts++;
             continue;
         }
@@ -117,7 +117,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
                 wifiClient.stop();
                 
                 if (response.indexOf("200 OK") > 0 || response.indexOf("201 Created") > 0) {
-                    logger.log("Data sent successfully to " + apiRoute);
+                    fancyLog.toSerial("Data sent successfully to " + apiRoute);
                     display.showHappyFace();
                     return true;
                 }
@@ -173,12 +173,12 @@ time_t NetworkManager::getNtpTime() {
 }
 
 void NetworkManager::checkForUpdates() {
-    logger.logWithBorder("Checking for firmware updates...");
-    logger.log("Current version: " + String(FIRMWARE_VERSION));
+    fancyLog.toSerial("Checking for firmware updates...", INFO);
+    fancyLog.toSerial("Current version: " + String(FIRMWARE_VERSION), INFO);
     display.showNeutralFace();
     
     if (!isConnected()) {
-        logger.logWithBorder("WiFi not connected, skipping update check");
+        fancyLog.toSerial("WiFi not connected, skipping update check", WARNING);
         display.showSadFace();
         return;
     }
@@ -187,10 +187,10 @@ void NetworkManager::checkForUpdates() {
                       "&currentVersion=" + String(FIRMWARE_VERSION) +
                       "&modelType=" + String(MODEL_TYPE);
     
-    logger.log("Update check URL: " + updateUrl);
+    fancyLog.toSerial("Update check URL: " + updateUrl);
     
     if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-        logger.logWithBorder("Failed to connect to update server");
+        fancyLog.toSerial("Failed to connect to update server", ERROR);
         display.showSadFace();
         return;
     }
@@ -201,7 +201,7 @@ void NetworkManager::checkForUpdates() {
         "Connection: close\r\n\r\n";
     
     wifiClient.print(httpRequest);
-    logger.log("Sent update check request");
+    fancyLog.toSerial("Sent update check request", INFO);
     
     // Read the entire response with better timeout and buffer handling
     String response = "";
@@ -219,9 +219,9 @@ void NetworkManager::checkForUpdates() {
             
             // Check for HTTP status code
             if (line.startsWith("HTTP/1.")) {
-                logger.log("Response status: " + line);
+                fancyLog.toSerial("Response status: " + line);
                 if (line.indexOf("200 OK") < 0) {
-                    logger.logWithBorder("Server returned non-200 status: " + line);
+                    fancyLog.toSerial("Server returned non-200 status: " + line);
                     wifiClient.stop();
                     display.showSadFace();
                     return;
@@ -231,7 +231,7 @@ void NetworkManager::checkForUpdates() {
             // Detect end of headers
             if (line == "\r") {
                 headersEnded = true;
-                logger.log("Headers ended, reading body...");
+                fancyLog.toSerial("Headers ended, reading body...", INFO);
                 continue;
             }
             
@@ -242,7 +242,7 @@ void NetworkManager::checkForUpdates() {
                 // Add important headers to log
                 if (line.startsWith("Content-Type:") || 
                     line.startsWith("Content-Length:")) {
-                    logger.log("Header: " + line);
+                    fancyLog.toSerial("Header: " + line);
                 }
             }
         }
@@ -258,15 +258,15 @@ void NetworkManager::checkForUpdates() {
     wifiClient.stop();
     
     if (!responseReceived) {
-        logger.logWithBorder("No response received from server");
+        fancyLog.toSerial("No response received from server", ERROR);
         display.showSadFace();
         return;
     }
     
     if (!headersEnded || jsonBody.length() == 0) {
-        logger.logWithBorder("Incomplete response received");
-        logger.log("Headers ended: " + String(headersEnded));
-        logger.log("Body length: " + String(jsonBody.length()));
+        fancyLog.toSerial("Incomplete response received", WARNING);
+        fancyLog.toSerial("Headers ended: " + String(headersEnded));
+        fancyLog.toSerial("Body length: " + String(jsonBody.length()));
         display.showSadFace();
         return;
     }
@@ -285,28 +285,28 @@ void NetworkManager::checkForUpdates() {
             return;
         }
     } else {
-        logger.logWithBorder("Response does not contain valid JSON");
-        logger.log("Response body: " + jsonBody);
+        fancyLog.toSerial("Response does not contain valid JSON", WARNING);
+        fancyLog.toSerial("Response body: " + jsonBody);
     }
     
-    logger.logWithBorder("Update check failed");
+    fancyLog.toSerial("Update check failed", ERROR);
     display.showSadFace();
 }
 
 bool NetworkManager::handleUpdateResponse(String& jsonBody) {
-    logger.log("Parsing update response: " + jsonBody);
+    fancyLog.toSerial("Parsing update response: " + jsonBody);
     
     StaticJsonDocument<512> jsonDoc;
     DeserializationError error = deserializeJson(jsonDoc, jsonBody);
     
     if (error) {
-        logger.logWithBorder("JSON Parse Error: " + String(error.c_str()));
+        fancyLog.toSerial("JSON Parse Error: " + String(error.c_str()));
         return false;
     }
     
     // Check if JSON has the expected fields
     if (!jsonDoc.containsKey("updateAvailable")) {
-        logger.logWithBorder("Invalid JSON response: missing 'updateAvailable' field");
+        fancyLog.toSerial("Invalid JSON response: missing 'updateAvailable' field", WARNING);
         return false;
     }
     
@@ -314,25 +314,25 @@ bool NetworkManager::handleUpdateResponse(String& jsonBody) {
     
     if (!updateAvailable) {
         String message = jsonDoc["message"] | "No updates available";
-        logger.logWithBorder("Update Status: " + message);
+        fancyLog.toSerial("Update Status: " + message);
         display.showHappyFace();
         return true;
     }
     
     // Check for required update fields
     if (!jsonDoc.containsKey("latestVersion")) {
-        logger.logWithBorder("Invalid JSON: missing 'latestVersion' field");
+        fancyLog.toSerial("Invalid JSON: missing 'latestVersion' field", WARNING);
         return false;
     }
     
     if (!jsonDoc.containsKey("size")) {
-        logger.logWithBorder("Invalid JSON: missing 'size' field");
+        fancyLog.toSerial("Invalid JSON: missing 'size' field", WARNING);
         return false;
     }
     
     latestFirmwareVersion = jsonDoc["latestVersion"].as<String>();
-    logger.log("Latest firmware version: " + latestFirmwareVersion);
-    logger.log("Current firmware version: " + String(FIRMWARE_VERSION));
+    fancyLog.toSerial("Latest firmware version: " + latestFirmwareVersion, INFO);
+    fancyLog.toSerial("Current firmware version: " + String(FIRMWARE_VERSION), INFO);
     
     // Show update is available
     display.showUpdateAvailable();
@@ -343,11 +343,11 @@ bool NetworkManager::handleUpdateResponse(String& jsonBody) {
     
     int firmwareSize = jsonDoc["size"] | 0;
     if (firmwareSize <= 0) {
-        logger.logWithBorder("Invalid firmware size: " + String(firmwareSize));
+        fancyLog.toSerial("Invalid firmware size: " + String(firmwareSize), WARNING);
         return false;
     }
     
-    logger.log("Firmware size: " + String(firmwareSize) + " bytes");
+    fancyLog.toSerial("Firmware size: " + String(firmwareSize) + " bytes", INFO);
     
     // Wait a moment to show that update is available before starting download
     delay(2000);
@@ -357,13 +357,13 @@ bool NetworkManager::handleUpdateResponse(String& jsonBody) {
 
 bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSize) {
     if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-        logger.logWithBorder("Failed to connect to download server");
+        fancyLog.toSerial("Failed to connect to download server", ERROR);
         return false;
     }
     
-    logger.logWithBorder("Downloading firmware update");
-    logger.log("Update size: " + String(firmwareSize) + " bytes");
-    logger.log("Download URL: " + downloadUrl);
+    fancyLog.toSerial("Downloading firmware update", INFO);
+    fancyLog.toSerial("Update size: " + String(firmwareSize) + " bytes");
+    fancyLog.toSerial("Download URL: " + downloadUrl);
     
     // Show update initialization animation
     display.showUpdateInitializing();
@@ -383,7 +383,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     while (!headerFound && millis() - headerTimeout < API_TIMEOUT) {
         if (wifiClient.available()) {
             String line = wifiClient.readStringUntil('\n');
-            logger.log("Header: " + line);
+            fancyLog.toSerial("Header: " + line);
             if (line == "\r") {
                 headerFound = true;
                 break;
@@ -393,20 +393,20 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     }
     
     if (!headerFound) {
-        logger.logWithBorder("Failed to find header end marker");
+        fancyLog.toSerial("Failed to find header end marker", ERROR);
         wifiClient.stop();
         return false;
     }
     
     // Initialize OTA update
-    logger.log("Initializing OTA update storage");
+    fancyLog.toSerial("Initializing OTA update storage", INFO);
     if (!OTAManager::beginUpdate(firmwareSize)) {
-        logger.logWithBorder("Failed to initialize storage for update");
+        fancyLog.toSerial("Failed to initialize storage for update", ERROR);
         wifiClient.stop();
         return false;
     }
     
-    logger.log("Started firmware update process");
+    fancyLog.toSerial("Started firmware update process", INFO);
     int totalRead = 0;
     int lastProgressPercentage = -1; // Start with -1 to ensure first update is shown
     unsigned long downloadTimeout = millis();
@@ -417,7 +417,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     
     // Check if any data is available initially
     if (!wifiClient.available()) {
-        logger.log("Warning: No data available after headers");
+        fancyLog.toSerial("No data available after headers", WARNING);
         delay(1000); // Wait a bit for data to become available
     }
     
@@ -425,7 +425,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     while (totalRead < firmwareSize) {
         // Check for timeout conditions
         if (millis() - downloadTimeout > API_TIMEOUT * 3) {
-            logger.logWithBorder("Download timeout - total timeout exceeded");
+            fancyLog.toSerial("Download timeout - total timeout exceeded", WARNING);
             OTAManager::abortUpdate();
             wifiClient.stop();
             return false;
@@ -433,7 +433,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
         
         // Check for stalled download
         if (millis() - lastProgressTime > 10000) { // 10 seconds without progress
-            logger.logWithBorder("Download stalled - no progress for 10 seconds");
+            fancyLog.toSerial("Download stalled - no progress for 10 seconds",  WARNING);
             OTAManager::abortUpdate();
             wifiClient.stop();
             return false;
@@ -445,7 +445,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
             int bytesRead = wifiClient.read(buffer, sizeof(buffer));
             
             if (bytesRead <= 0) {
-                logger.log("Warning: Zero bytes read from client");
+                fancyLog.toSerial("Zero bytes read from client", WARNING);
                 delay(100);
                 continue;
             }
@@ -456,7 +456,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
             // Write the data to flash storage
             int bytesWritten = OTAManager::write(buffer, bytesRead);
             if (bytesWritten != bytesRead) {
-                logger.logWithBorder("Error writing firmware data: expected=" + 
+                fancyLog.toSerial("Error writing firmware data: expected=" +
                                   String(bytesRead) + ", actual=" + String(bytesWritten));
                 OTAManager::abortUpdate();
                 wifiClient.stop();
@@ -472,12 +472,12 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
             if (progressPercentage / 5 > lastProgressPercentage / 5) {
                 lastProgressPercentage = progressPercentage;
                 display.showUpdateProgress(progressPercentage);
-                logger.log("Downloaded: " + String(totalRead) + " bytes (" + String(progressPercentage) + "%)");
+                fancyLog.toSerial("Downloaded: " + String(totalRead) + " bytes (" + String(progressPercentage) + "%)");
             }
         } else if (!wifiClient.connected()) {
             // Connection closed prematurely
             if (totalRead < firmwareSize) {
-                logger.logWithBorder("Connection closed before download completed: " + 
+                fancyLog.toSerial("Connection closed before download completed: " +
                                  String(totalRead) + "/" + String(firmwareSize) + " bytes");
                 OTAManager::abortUpdate();
                 wifiClient.stop();
@@ -495,20 +495,20 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     
     // Check if download was successful
     if (totalRead < firmwareSize) {
-        logger.logWithBorder("Download incomplete: " + String(totalRead) + 
+        fancyLog.toSerial("Download incomplete: " + String(totalRead) +
                          "/" + String(firmwareSize) + " bytes received");
         OTAManager::abortUpdate();
         return false;
     }
     
-    logger.log("Finalizing update");
+    fancyLog.toSerial("Finalizing update", INFO);
     if (!OTAManager::endUpdate()) {
-        logger.logWithBorder("Failed to finalize the update");
+        fancyLog.toSerial("Failed to finalize the update", ERROR);
         return false;
     }
     
-    logger.logWithBorder("Firmware downloaded successfully!");
-    logger.log("Applying update...");
+    fancyLog.toSerial("Firmware downloaded successfully!", INFO);
+    fancyLog.toSerial("Applying update...", INFO);
     
     // Show 100% update progress
     display.showUpdateProgress(100);
@@ -521,12 +521,12 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     
     String statusData;
     serializeJson(statusDoc, statusData);
-    logger.log("Sending update status to server");
+    fancyLog.toSerial("Sending update status to server", INFO);
     sendHttpPostRequest(statusData, "/api/device/register");
     
     // Give time to see the completion message before restart
     delay(3000);
-    logger.logWithBorder("Restarting with new firmware");
+    fancyLog.toSerial("Restarting with new firmware", INFO);
     OTAManager::applyUpdate();  // This will restart the board
     return true;
 } 
