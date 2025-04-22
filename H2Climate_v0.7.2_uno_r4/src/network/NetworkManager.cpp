@@ -19,9 +19,9 @@ void NetworkManager::begin() {
     // Sync time using NTP
     setSyncProvider(NetworkManager::getNtpTime);
     if (timeStatus() == timeSet) {
-        fancyLog.toSerial("Time synchronized");
+        fancyLog.toSerial("Time synchronized", INFO);
     } else {
-        fancyLog.toSerial("Failed to synchronize time");
+        fancyLog.toSerial("Failed to synchronize time", ERROR);
     }
     
     // Initialize OTA
@@ -33,7 +33,7 @@ void NetworkManager::pollOTA() {
 }
 
 bool NetworkManager::connectWiFi() {
-    fancyLog.toSerial("Connecting to WiFi: " + String(WIFI_SSID));
+    fancyLog.toSerial("Connecting to WiFi: " + String(WIFI_SSID), INFO);
     display.showNeutralFace();
     
     if (WiFi.status() == WL_CONNECTED) {
@@ -66,6 +66,9 @@ bool NetworkManager::connectWiFi() {
     
     if (WiFi.status() == WL_CONNECTED && WiFi.localIP()[0] != 0) {
         fancyLog.toSerial("WiFi connected, IP: " + WiFi.localIP().toString());
+        // Log received signal strength
+        long rssi = WiFi.RSSI();
+        fancyLog.toSerial("Signal strength (RSSI): " + String(rssi) + " dBm");
         display.showHappyFace();
         return true;
     } else {
@@ -86,7 +89,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
         }
         
         if (!isConnected()) {
-            fancyLog.toSerial("WiFi not connected. Reconnecting...");
+            fancyLog.toSerial("WiFi not connected. Reconnecting...", WARNING);
             display.showSadFace();
             if (!connectWiFi()) {
                 return false;
@@ -95,7 +98,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
         
         display.showNeutralFace();
         if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
-            fancyLog.toSerial("Failed to connect to server");
+            fancyLog.toSerial("Failed to connect to server", ERROR);
             apiAttempts++;
             continue;
         }
