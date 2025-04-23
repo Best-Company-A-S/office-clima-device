@@ -4,7 +4,11 @@
 //| FancyLog Public Functions |
 //¤===========================¤===========================================================¤
 void FancyLog::begin(unsigned long baudRate) {
-    Serial.begin(baudRate);
+  Serial.begin(baudRate);
+
+  while(!Serial) {
+    delay(10); // Wait for Serial to be ready
+  }
 }
 
 void FancyLog::toSerial(const String& message) {

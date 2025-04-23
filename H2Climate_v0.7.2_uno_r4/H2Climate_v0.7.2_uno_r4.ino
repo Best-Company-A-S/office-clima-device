@@ -17,10 +17,10 @@
 #include "src/config/params.h"
 
 //¤=======================================================================================¤
-//| TODO: Add sound sensor                                                               |
-//| TODO: Changeable settings                                                            |
-//| TODO: Add warning triggers at certain temperatures and humidities                    |
-//| TODO: Store more sensor data before sending a packet to reduce packet spam           |
+//| TODO: Add sound sensor (Sound sensor is garbango so maybe not)                        |
+//| TODO: Changeable settings                                                             |
+//| TODO: Add warning triggers at certain temperatures and humidities                     |
+//| TODO: Store more sensor data before sending a packet to reduce packet spam            |
 //¤=======================================================================================¤
 
 // Global objects
@@ -50,10 +50,12 @@ struct SensorData {
 SensorData dataBuffer[DATA_BUFFER_SIZE];
 
 void setup() {
+  fancyLog.toSerial("Starting H2Climate Device", INFO);
+
   // Initialize components
   fancyLog.begin(9600);
-  fancyLog.toSerial("Starting H2Climate Device", INFO);
-  
+  fancyLog.toSerial("Serial connection initialized", INFO);
+
   // Initialize device identifier
   DeviceIdentifier::initialize();
   DeviceIdentifier::printDeviceInfo();
