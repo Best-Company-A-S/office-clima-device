@@ -44,7 +44,7 @@ private:
   NetworkManager& networkManager;
   FancyLog& fancyLog;
   
-  static const int DATA_BUFFER_SIZE = 1;  // Number of readings to store before sending
+  static const int DATA_BUFFER_SIZE = 10;  // Number of readings to store before sending
   int dataCount;
   SensorData dataBuffer[DATA_BUFFER_SIZE];
   

@@ -18,6 +18,8 @@ SystemManager::SystemManager(DisplayManager& display, NetworkManager& network,
     previousBatteryLogMillis(0) {
 }
 
+//¤=======================================================================================¤
+
 void SystemManager::begin() {
   fancyLog.toSerial("Starting H2Climate Device", INFO);
   
@@ -57,6 +59,8 @@ void SystemManager::begin() {
   fancyLog.toSerial("Setup complete", INFO);
 }
 
+//¤=======================================================================================¤
+
 void SystemManager::update() {
   unsigned long currentMillis = millis();
   
@@ -83,22 +87,26 @@ void SystemManager::update() {
   // Log battery status periodically
   if (currentMillis - previousBatteryLogMillis >= BATTERY_LOG_INTERVAL) {
     previousBatteryLogMillis = currentMillis;
-    checkBattery();
+    batteryMonitor.logStatus();
   }
   
   // Check for updates periodically
   if (currentMillis - previousUpdateCheckMillis >= UPDATE_CHECK_INTERVAL) {
     previousUpdateCheckMillis = currentMillis;
-    checkForUpdates();
+    networkManager.checkForUpdates();
   }
   
   // Update display based on current state
   updateDisplay();
 }
 
+//¤=======================================================================================¤
+
 SystemState SystemManager::getState() const {
   return currentState;
 }
+
+//¤=======================================================================================¤
 
 void SystemManager::setState(SystemState newState) {
   if (newState != currentState) {
@@ -106,6 +114,8 @@ void SystemManager::setState(SystemState newState) {
     currentState = newState;
   }
 }
+
+//¤=======================================================================================¤
 
 void SystemManager::registerDevice() {
   StaticJsonDocument<256> jsonDoc;
@@ -117,6 +127,8 @@ void SystemManager::registerDevice() {
   serializeJson(jsonDoc, registerData);
   networkManager.sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
 }
+
+//¤=======================================================================================¤
 
 void SystemManager::readSensors() {
   fancyLog.toSerial("Taking sensor readings", INFO);
@@ -147,13 +159,7 @@ void SystemManager::readSensors() {
   }
 }
 
-void SystemManager::checkBattery() {
-  batteryMonitor.logStatus();
-}
-
-void SystemManager::checkForUpdates() {
-  networkManager.checkForUpdates();
-}
+//¤=======================================================================================¤
 
 void SystemManager::updateDisplay() {
   switch (currentState) {

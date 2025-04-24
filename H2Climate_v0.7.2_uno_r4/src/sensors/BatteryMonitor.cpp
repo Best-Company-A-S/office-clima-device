@@ -4,6 +4,8 @@
 BatteryMonitor::BatteryMonitor(FancyLog& fancyLog)
     : fancyLog(fancyLog) {}
 
+//¤=======================================================================================¤
+
 void BatteryMonitor::begin() {
     // Initialize battery monitoring pin
     pinMode(BATTERY_PIN, INPUT);
@@ -13,16 +15,23 @@ void BatteryMonitor::begin() {
     int percentage = readPercentage();
     int timeRemaining = estimateTimeRemaining();
     
-    fancyLog.toSerial("Initial battery reading: " + String(voltage, 2) + "V (actual ~" +
-               String(voltage * VOLTAGE_TO_BATTERY, 1) + "V, " + 
-               String(percentage) + "%) - Est. " + String(timeRemaining) + " minutes remaining", INFO);
+    fancyLog.toSerial("Initial battery reading: " +
+			   String(voltage, 2) + "V (actual ~" +
+               String(voltage * VOLTAGE_TO_BATTERY, 1) + "V, " +
+               String(percentage) + "%) - Est. " +
+			   String(timeRemaining) + " minutes remaining", INFO);
                
     if (isLowBattery()) {
         fancyLog.toSerial("LOW BATTERY", WARNING);
     }
 }
 
+//¤=======================================================================================¤
+
 float BatteryMonitor::readVoltage() {
+
+	fancyLog.toSerial("readVoltage function called", DEBUG);
+
     // Read the analog value from the battery pin
     int rawValue = analogRead(BATTERY_PIN);
     
@@ -36,16 +45,21 @@ float BatteryMonitor::readVoltage() {
     float voltage = rawValue * (3.3 / 1023.0);
     
     // Log raw voltage for debugging
-    if (rawValue > 100) { // Only log reasonable values
+    /*if (rawValue > 100) { // Only log reasonable values
         fancyLog.toSerial("Battery ADC raw: " + String(rawValue) + ", Voltage: " +
                   String(voltage, 3) + "V (actual ~" + 
                   String(voltage * VOLTAGE_TO_BATTERY, 1) + "V)", INFO);
-    }
-    
+    }*/
+
     return voltage;
 }
 
+//¤=======================================================================================¤
+
 int BatteryMonitor::readPercentage() {
+
+    fancyLog.toSerial("readPercentage function called", DEBUG);
+
     // Get current battery voltage
     float voltage = readVoltage();
     
@@ -65,7 +79,12 @@ int BatteryMonitor::readPercentage() {
     return percentage;
 }
 
+//¤=======================================================================================¤
+
 int BatteryMonitor::estimateTimeRemaining() {
+
+	fancyLog.toSerial("estimateTimeRemaining function called", DEBUG);
+
     // Get current battery percentage
     int percentage = readPercentage();
     
@@ -74,6 +93,8 @@ int BatteryMonitor::estimateTimeRemaining() {
     
     return timeRemaining;
 }
+
+//¤=======================================================================================¤
 
 void BatteryMonitor::logStatus() {
     float voltage = readVoltage();
@@ -96,6 +117,8 @@ void BatteryMonitor::logStatus() {
         fancyLog.toSerial("LOW BATTERY", WARNING);
     }
 }
+
+//¤=======================================================================================¤
 
 bool BatteryMonitor::isLowBattery() {
     return readPercentage() < LOW_BATTERY_THRESHOLD;

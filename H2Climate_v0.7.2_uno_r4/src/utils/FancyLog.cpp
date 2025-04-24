@@ -12,20 +12,7 @@ void FancyLog::begin(unsigned long baudRate) {
 }
 
 void FancyLog::toSerial(const String& message) {
-  /*
-  String messageBorder = "";
-  String paddedMessage = " " + message + " ";
-  int messageLength = paddedMessage.length();
-
-  for (int i = 0; i < messageLength; i++) {
-    messageBorder += "-";
-  }
-
-  Serial.println("¤" + messageBorder + "¤");
-  Serial.println("|" + paddedMessage + "|");
-  Serial.println("¤" + messageBorder + "¤");
-  */
-  Serial.println(message);
+  Serial.println("| " + message);
 }
 
 void FancyLog::toSerial(const String& message, LogLevel level) {
@@ -76,6 +63,7 @@ void FancyLog::toSerial(const String& message, LogLevel level) {
 String FancyLog::getLevelString(LogLevel level) {
   switch (level) {
     case INFO: return "INFO";
+	case DEBUG: return "DEBUG";
     case WARNING: return "WARNING";
     case ERROR: return "ERROR";
     default: return "UNKNOWN";
@@ -85,6 +73,7 @@ String FancyLog::getLevelString(LogLevel level) {
 char FancyLog::getBorderChar(LogLevel level) {
   switch (level) {
     case INFO: return '~';
+	case DEBUG: return '#';
     case WARNING: return '=';
     case ERROR: return '/';
     default: return '-';
