@@ -10,65 +10,79 @@
 #include <ArduinoJson.h>
 #include "ArduinoGraphics.h"
 #include "../utils/DeviceIdentifier.h"
+#include "../config/secrets.h"
 
-// Device Configuration
-// DEVICE_ID is now retrieved dynamically from DeviceIdentifier class
-extern const char* MODEL_TYPE;
-extern const char* FIRMWARE_VERSION;
-#define MODEL_TYPE_VALUE "Arduino_UNO_R4_WiFi"
-#define FIRMWARE_VERSION_VALUE "V0.7.2"
+//¤======================¤
+//| Device Configuration |
+//¤======================¤================================================================¤
+// DEVICE_ID is retrieved dynamically from DeviceIdentifier class
+constexpr const char* MODEL_TYPE = "Arduino_UNO_R4_WiFi";
+constexpr const char* FIRMWARE_VERSION = "V0.7.2";
 
-// Network Configuration    
-extern const char* WIFI_SSID;     // Define in secrets.h
-extern const char* WIFI_PASS;     // Define in secrets.h
-extern const char* SERVER_URL;
-extern const int SERVER_PORT;
-#define SERVER_URL_VALUE "10.106.187.92"
-#define SERVER_PORT_VALUE 3000
+//¤=======================¤
+//| Network Configuration |
+//¤=======================¤===============================================================¤
+constexpr const char* SERVER_URL = "10.106.187.92";
+constexpr const int SERVER_PORT = 3000;
 
-// API Routes
-extern const char* API_REGISTER_ROUTE;
-extern const char* API_DATA_ROUTE;
-#define API_REGISTER_ROUTE_VALUE "/api/device/register"
-#define API_DATA_ROUTE_VALUE "/api/devices/readings"
+//¤============¤
+//| API Routes |
+//¤============¤==========================================================================¤
+constexpr const char* API_REGISTER_ROUTE = "/api/device/register";
+constexpr const char* API_DATA_ROUTE = "/api/devices/readings";
 
-// Timing Configuration
-extern const unsigned long LOOP_INTERVAL;      // Main loop interval in milliseconds
-extern const unsigned long API_TIMEOUT;        // API timeout in milliseconds
-extern const unsigned long WIFI_TIMEOUT;       // WiFi connection timeout in milliseconds
-extern const int MAX_API_ATTEMPTS;             // Maximum API connection attempts
-#define LOOP_INTERVAL_VALUE 10000      // Main loop interval (10 seconds)
-#define API_TIMEOUT_VALUE 10000        // API timeout in milliseconds
-#define WIFI_TIMEOUT_VALUE 20000       // WiFi connection timeout
-#define MAX_API_ATTEMPTS_VALUE 3       // Maximum API connection attempts
+//¤======================¤
+//| Timing Configuration |
+//¤======================¤================================================================¤
+// Main loop interval in milliseconds (10 seconds)
+constexpr const unsigned long LOOP_INTERVAL = 10000;
+// API request timeout in milliseconds
+constexpr const unsigned long API_TIMEOUT = 10000;
+// WiFi connection timeout in milliseconds
+constexpr const unsigned long WIFI_TIMEOUT = 20000;
+// Maximum number of API connection attempts before giving up
+constexpr const int MAX_API_ATTEMPTS = 3;
+// Update check interval (1 hour in milliseconds)
+constexpr const unsigned long CHECK_INTERVAL = 3600000UL;
+// Battery status logging interval (10 seconds)
+constexpr const unsigned long BATTERY_LOG_INTERVAL = 10000;
 
-// Update Check Configuration
-#define CHECK_INTERVAL 3600000UL // 1 hour in milliseconds - Update check interval
+//¤=========================¤
+//| Animation Configuration |
+//¤=========================¤=============================================================¤
+// Number of times to blink during retry animation
+constexpr const int RETRY_ANIMATION_BLINKS = 3;
+// Time in milliseconds that LED is on during retry animation
+constexpr const int RETRY_ANIMATION_ON_TIME = 500;
+// Time in milliseconds that LED is off during retry animation
+constexpr const int RETRY_ANIMATION_OFF_TIME = 500;
 
-// Battery Log Configuration 
-#define BATTERY_LOG_INTERVAL 10000 // Check battery every 10 seconds for debugging
-
-// Animation Configuration
-extern const int RETRY_ANIMATION_BLINKS;
-extern const int RETRY_ANIMATION_ON_TIME;
-extern const int RETRY_ANIMATION_OFF_TIME;
-#define RETRY_ANIMATION_BLINKS_VALUE 3
-#define RETRY_ANIMATION_ON_TIME_VALUE 500
-#define RETRY_ANIMATION_OFF_TIME_VALUE 500
-
-// Sensor Configuration
-extern const int DHT22_PIN;       // Define the pin where DHT22 is connected
-#define DHT22_PIN_VALUE 2
+//¤======================¤
+//| Sensor Configuration |
+//¤======================¤================================================================¤
+// Define the pin where DHT22 is connected
+constexpr const int DHT22_PIN = 2;
+// DHT sensor type definition
 #define DHTTYPE DHT22
 
-// Data Buffer Configuration
-#define DATA_BUFFER_SIZE 1       // Number of readings to store before sending
+//¤===========================¤
+//| Data Buffer Configuration |
+//¤===========================¤===========================================================¤
+// Number of readings to store before sending to server
+constexpr const int DATA_BUFFER_SIZE = 1;
 
-// Battery Monitor Configuration
-#define BATTERY_PIN A0           // Analog pin for battery monitoring
-#define BATTERY_REFERENCE_VOLTAGE 3.3  // Reference voltage for ADC
-#define BATTERY_FULL_VOLTAGE 4.2       // Full battery voltage
-#define BATTERY_EMPTY_VOLTAGE 3.3      // Empty battery voltage
-#define BATTERY_RESISTOR_RATIO 2.0     // Voltage divider ratio (if using a resistor divider)
+//¤===============================¤
+//| Battery Monitor Configuration |
+//¤===============================¤=======================================================¤
+// Analog pin for battery monitoring
+constexpr const int BATTERY_PIN = A0;
+// Reference voltage for ADC in volts
+constexpr const float BATTERY_REFERENCE_VOLTAGE = 3.3;
+// Full battery voltage in volts
+constexpr const float BATTERY_FULL_VOLTAGE = 4.2;
+// Empty battery voltage in volts
+constexpr const float BATTERY_EMPTY_VOLTAGE = 3.3;
+// Voltage divider ratio (if using a resistor divider)
+constexpr const float BATTERY_RESISTOR_RATIO = 2.0;
 
 #endif // CONFIG_H 

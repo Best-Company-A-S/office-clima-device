@@ -84,7 +84,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     
     while (apiAttempts < MAX_API_ATTEMPTS && !success) {
         if (apiAttempts > 0) {
-            fancyLog.toSerial("Retry attempt " + String(apiAttempts) + " of " + String(MAX_API_ATTEMPTS - 1));
+            fancyLog.toSerial("Retry attempt " + String(apiAttempts) + " of " + String(MAX_API_ATTEMPTS - 1), INFO);
             display.showRetryAnimation();
         }
         

@@ -46,6 +46,9 @@ struct SensorData {
 };
 SensorData dataBuffer[DATA_BUFFER_SIZE]; // Using DATA_BUFFER_SIZE defined in params.h
 
+//¤============¤
+//| Setup loop |
+//¤============¤==========================================================================¤
 void setup() {
   fancyLog.toSerial("Starting H2Climate Device", INFO);
 
@@ -88,6 +91,9 @@ void setup() {
   fancyLog.toSerial("Setup complete", INFO);
 }
 
+//¤==============¤
+//| Runtime loop |
+//¤==============¤========================================================================¤
 void loop() {
   // Handle OTA updates
   network.pollOTA();
@@ -122,17 +128,14 @@ void loop() {
     float temperature = sensors.readTemperature();
     float humidity = sensors.readHumidity();
     float batteryVoltage = battery.readVoltage();
-    int batteryPercentage = battery.readPercentage();
-    int batteryTimeRemaining = battery.estimateTimeRemaining();
+    int batteryPercentage = battery.readPercentage(batteryVoltage);
+    int batteryTimeRemaining = battery.estimateTimeRemaining(batteryPercentage);
 
     if (isnan(temperature) || isnan(humidity)) {
       fancyLog.toSerial("Failed to read sensor", ERROR);
       display.showSadFace();
       return;
     }
-
-    // Display with consistent decimal places
-    fancyLog.toSerial("Temp: " + String(temperature, 1) + "°C, Humidity: " + String(humidity, 1) + "%");
 
     // Store in buffer
     dataBuffer[dataCount] = {
@@ -173,6 +176,8 @@ void loop() {
 }
 
 void sendBufferedData() {
+  fancyLog.toSerial("Sending data", INFO);
+
   // Get the values we're sending
   float temp = dataBuffer[0].temperature;
   float hum = dataBuffer[0].humidity;
@@ -180,11 +185,6 @@ void sendBufferedData() {
   int batteryPercentage = dataBuffer[0].batteryPercentage;
   int batteryTimeRemaining = dataBuffer[0].batteryTimeRemaining;
   unsigned long timestamp = dataBuffer[0].timestamp;
-
-  // Log battery data before sending to verify
-  fancyLog.toSerial("Battery data to send - Voltage: " + String(batteryVoltage, 3) +
-             "V, Percentage: " + String(batteryPercentage) + 
-             "%, Time remaining: " + String(batteryTimeRemaining) + " minutes");
 
   // Create the JSON document
   StaticJsonDocument<384> jsonDoc;
@@ -200,7 +200,7 @@ void sendBufferedData() {
   serializeJson(jsonDoc, sensorData);
 
   // Log the exact JSON format
-  fancyLog.toSerial("JSON Format: " + sensorData);
+  fancyLog.toSerial("JSON Format: " + sensorData, INFO);
 
   if (network.sendHttpPostRequest(sensorData, API_DATA_ROUTE)) {
     fancyLog.toSerial("Data sent successfully", INFO);
