@@ -22,7 +22,7 @@ void BatteryMonitor::logStatus() {
     int percentage = readPercentage(voltage);
     int timeRemaining = estimateTimeRemaining(percentage);
 
-    fancyLog.toSerial("Initial battery reading: " +
+    fancyLog.toSerial("Battery reading: " +
 			   String(voltage, 2) + "V (actual ~" +
                String(voltage * VOLTAGE_TO_BATTERY, 1) + "V, " +
                String(percentage) + "%) - Est. " +
