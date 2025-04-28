@@ -28,6 +28,7 @@
 //| TODO: Changeable settings                                                             |
 //| TODO: Add warning triggers at certain temperatures and humidities                     |
 //| TODO: Store more sensor data before sending a packet to reduce packet spam            |
+//| TODO: Refactor BatteryMonitor class when a better solution is decided                 |
 //¤=======================================================================================¤
 
 // Global objects

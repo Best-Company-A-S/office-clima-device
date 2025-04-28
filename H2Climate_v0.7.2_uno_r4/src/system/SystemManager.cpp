@@ -137,8 +137,8 @@ void SystemManager::readSensors() {
   float temperature = sensorManager.readTemperature();
   float humidity = sensorManager.readHumidity();
   float batteryVoltage = batteryMonitor.readVoltage();
-  int batteryPercentage = batteryMonitor.readPercentage();
-  int batteryTimeRemaining = batteryMonitor.estimateTimeRemaining();
+  int batteryPercentage = batteryMonitor.readPercentage(batteryVoltage);
+  int batteryTimeRemaining = batteryMonitor.estimateTimeRemaining(batteryPercentage);
   
   if (isnan(temperature) || isnan(humidity)) {
     fancyLog.toSerial("Failed to read sensor", ERROR);

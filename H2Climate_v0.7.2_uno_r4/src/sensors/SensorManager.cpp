@@ -25,17 +25,11 @@ void SensorManager::begin() {
 }
 
 float SensorManager::readTemperature() {
-
-	fancyLog.toSerial("readTemperature function called", DEBUG);
-
     // Direct call to DHT sensor exactly like original code
     return dht.readTemperature();
 }
 
 float SensorManager::readHumidity() {
-
-	fancyLog.toSerial("readHumidity function called", DEBUG);
-
     // Direct call to DHT sensor exactly like original code
     return dht.readHumidity();
 }
