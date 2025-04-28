@@ -17,7 +17,20 @@ H2Climate is an Arduino-based IoT device that monitors environmental conditions 
 - 📶 WiFi connectivity
 - 🕰️ NTP time synchronization
 - 😊 Visual status indicators using LED matrix
-- 🔋 Low-power operation (planned)
+- 🔋 Battery monitoring and management
+- 🔄 OTA (Over-The-Air) updates
+- 📊 Data buffering for efficient transmission
+- 🚨 Error handling and status reporting
+
+## 📈 Project Status
+
+Check out our [Project Status](project_status.md) document for detailed information about:
+
+- Learning objectives implementation
+- Project statistics
+- Current features
+- Next steps
+- Development progress
 
 ## 📐 System Architecture
 
@@ -35,6 +48,7 @@ flowchart LR
 - DHT22 Temperature & Humidity Sensor
 - LED Matrix (built into UNO R4)
 - Power supply
+- Battery monitoring circuit
 
 ### Hardware Connections
 
@@ -45,27 +59,31 @@ graph TD
     A -- 5V --> C
     A -- GND --> C
     A -- USB/Power Port --> D[Power Supply]
+    A -- Analog Pin A0 --> E[Battery Monitor]
 
     style A fill:#d4f0f0,stroke:#2E8BC0
     style B fill:#FFE6E6,stroke:#DA4167
     style C fill:#d8f8e1,stroke:#4CAF50
     style D fill:#fff9db,stroke:#FF9800
+    style E fill:#e6e6fa,stroke:#9370DB
 ```
 
 ## 📦 Software Dependencies
 
-- ArduinoJson
+- ArduinoJson (v6.x)
 - TimeLib
 - WiFiS3
 - DHT sensor library
 - Arduino_LED_Matrix
+- ArduinoOTA
 
 ## 🔧 Installation & Setup
 
 ### Hardware Setup
 
 1. Connect the DHT22 sensor to pin 12 on the Arduino UNO R4
-2. Power the Arduino via USB or external power supply
+2. Connect the battery monitoring circuit to analog pin A0
+3. Power the Arduino via USB or external power supply
 
 ### Software Setup
 
@@ -103,6 +121,7 @@ sequenceDiagram
     participant UI as Web Dashboard
 
     Device->>Device: Collect temperature & humidity data
+    Device->>Device: Monitor battery status
     Device->>Server: Send JSON data via HTTP POST
     Server->>Database: Store sensor readings
     Server->>Device: Send acknowledgment
@@ -111,7 +130,7 @@ sequenceDiagram
     Database->>Server: Return data
     Server->>UI: Display visualizations
 
-    Note over Device: LED Matrix shows status:<br/>😊 Connected<br/>😐 Setting up<br/>😟 Error
+    Note over Device: LED Matrix shows status:<br/>😊 Connected<br/>😐 Setting up<br/>😟 Error<br/>⚠️ Low Battery
 ```
 
 ## 🚀 Version History
@@ -122,6 +141,9 @@ sequenceDiagram
 | v0.2    | Added WiFi connectivity and data transmission                  |
 | v0.3    | Implemented NTP time synchronization                           |
 | v0.4    | Added LED matrix status indicators and improved error handling |
+| v0.5    | Implemented battery monitoring                                 |
+| v0.6    | Added OTA update capability                                    |
+| v0.7    | Improved data buffering and error handling                     |
 
 ## 📝 Future Improvements
 
@@ -129,16 +151,17 @@ sequenceDiagram
 mindmap
   root((H2Climate))
     Monitoring
-      Battery logging
       Sound level monitoring
+      Air quality sensors
     Configuration
       Web interface settings
       Alert triggers
     Identification
       MAC address based IDs
     Optimization
-      Data buffering
+      Enhanced data buffering
       Power management
+      Sleep modes
 ```
 
 ## 📊 Web Dashboard
@@ -150,6 +173,7 @@ The companion web dashboard displays:
 - Current temperature and humidity readings
 - Historical data trends
 - Device status and connectivity information
+- Battery status and remaining time
 - Alert notifications for out-of-range conditions
 
 ### Sample Temperature & Humidity Trends
@@ -171,16 +195,20 @@ The device communicates with the following API endpoints:
 
 - `/api/devices/readings` - POST endpoint for sending sensor data
 - `/api/device/register` - POST endpoint for device registration
+- `/api/device/update` - GET endpoint for checking firmware updates
 
 ## 🔌 Communication Protocol
 
-Data is sent using simple JSON packets:
+Data is sent using JSON packets:
 
 ```json
 {
   "deviceId": "6fe26f8eaf1e",
   "temperature": 23.5,
   "humidity": 45.2,
+  "batteryVoltage": 3.7,
+  "batteryPercentage": 85,
+  "batteryTimeRemaining": 120,
   "timestamp": 1649276543
 }
 ```
