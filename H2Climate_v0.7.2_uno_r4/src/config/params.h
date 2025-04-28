@@ -7,7 +7,7 @@
 #define FIRMWARE_VERSION_VALUE "V0.7.2"
 
 // Server Configuration
-#define SERVER_URL_VALUE "10.106.187.35"
+#define SERVER_URL_VALUE "10.106.187.92"
 #define SERVER_PORT_VALUE 3000
 #define API_TIMEOUT_VALUE 10000
 #define API_REGISTER_ROUTE_VALUE "/api/device/register"

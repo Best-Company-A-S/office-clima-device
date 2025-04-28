@@ -26,19 +26,11 @@ public:
   SystemManager(DisplayManager& display, NetworkManager& network, 
                 SensorManager& sensors, BatteryMonitor& battery,
                 DataManager& data, FancyLog& log);
-  
-  // Initialize the system
-  void begin();
-  
-  // Main system update function, to be called in loop()
-  void update();
-  
-  // Get current system state
-  SystemState getState() const;
-  
-  // Set system state
-  void setState(SystemState newState);
 
+  void begin(); // Initialize the system
+  void update(); // Main system update function, to be called in loop()
+  SystemState getState() const; // Get current system state
+  void setState(SystemState newState); // Set system state
 private:
   DisplayManager& displayManager;
   NetworkManager& networkManager;

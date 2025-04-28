@@ -24,32 +24,21 @@ public:
   void storeReading(float temperature, float humidity, 
                    float batteryVoltage, int batteryPercentage, 
                    int batteryTimeRemaining);
-  
-  // Send stored data to server
-  bool sendData();
-  
-  // Check if buffer is full
-  bool isBufferFull() const;
-  
-  // Clear data buffer
-  void clearBuffer();
-  
-  // Get buffer capacity
-  int getBufferCapacity() const;
-  
-  // Get current number of readings
-  int getReadingCount() const;
 
+  bool sendData(); // Send stored data to server
+  bool isBufferFull() const; // Check if buffer is full
+  void clearBuffer(); // Clear data buffer
+  int getBufferCapacity() const; // Get buffer capacity
+  int getReadingCount() const; // Get current number of readings
 private:
   NetworkManager& networkManager;
   FancyLog& fancyLog;
   
-  static const int DATA_BUFFER_SIZE = 10;  // Number of readings to store before sending
+  static const int DATA_BUFFER_SIZE = 1;  // Number of readings to store before sending
   int dataCount;
   SensorData dataBuffer[DATA_BUFFER_SIZE];
-  
-  // Create JSON payload from stored data
-  String createJsonPayload() const;
+
+  String createJsonPayload() const; // Create JSON payload from stored data
 };
 
 #endif // DATA_MANAGER_H
