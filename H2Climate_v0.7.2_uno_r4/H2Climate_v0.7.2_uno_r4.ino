@@ -14,7 +14,6 @@
 #include "src/utils/FancyLog.h"
 #include "src/utils/DeviceIdentifier.h"
 #include "src/config/secrets.h"
-#include "src/config/params.h"
 
 //¤=======================================================================================¤
 //| TODO: Add sound sensor (Sound sensor is garbango so maybe not)                        |
@@ -34,10 +33,8 @@ BatteryMonitor battery(fancyLog);
 unsigned long previousMillis = 0;
 unsigned long previousUpdateCheckMillis = 0;
 unsigned long previousBatteryLogMillis = 0;
-const unsigned long BATTERY_LOG_INTERVAL = 10000; // Check battery every 10 seconds for debugging
 
 // Data collection variables
-const int DATA_BUFFER_SIZE = 1;  // Number of readings to store before sending
 int dataCount = 0;
 struct SensorData {
   float temperature;
@@ -47,7 +44,7 @@ struct SensorData {
   int batteryTimeRemaining;
   unsigned long timestamp;
 };
-SensorData dataBuffer[DATA_BUFFER_SIZE];
+SensorData dataBuffer[DATA_BUFFER_SIZE]; // Using DATA_BUFFER_SIZE defined in params.h
 
 void setup() {
   fancyLog.toSerial("Starting H2Climate Device", INFO);

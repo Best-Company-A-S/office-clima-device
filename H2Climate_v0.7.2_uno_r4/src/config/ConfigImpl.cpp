@@ -1,6 +1,5 @@
 #include "Config.h"
 #include "secrets.h"
-#include "params.h"
 
 // Network Configuration
 const char* WIFI_SSID = WIFI_SSID_VALUE;
@@ -22,6 +21,8 @@ const unsigned long LOOP_INTERVAL = LOOP_INTERVAL_VALUE;
 const unsigned long API_TIMEOUT = API_TIMEOUT_VALUE;
 const unsigned long WIFI_TIMEOUT = WIFI_TIMEOUT_VALUE;
 const int MAX_API_ATTEMPTS = MAX_API_ATTEMPTS_VALUE;
+// CHECK_INTERVAL is defined directly in params.h
+// BATTERY_LOG_INTERVAL is defined directly in params.h
 
 // Animation Configuration
 const int RETRY_ANIMATION_BLINKS = RETRY_ANIMATION_BLINKS_VALUE;
@@ -29,4 +30,8 @@ const int RETRY_ANIMATION_ON_TIME = RETRY_ANIMATION_ON_TIME_VALUE;
 const int RETRY_ANIMATION_OFF_TIME = RETRY_ANIMATION_OFF_TIME_VALUE;
 
 // Sensor Configuration
-const int DHT22_PIN = DHT22_PIN_VALUE; 
+const int DHT22_PIN = DHT22_PIN_VALUE;
+
+// Data Buffer Configuration is defined directly in params.h as a preprocessor define
+
+// Battery Monitor Configuration is defined directly in params.h
