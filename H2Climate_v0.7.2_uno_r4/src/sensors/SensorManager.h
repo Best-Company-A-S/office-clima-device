@@ -6,7 +6,7 @@
 #include "DHT.h"
 
 class SensorManager {
-public:
+  public:
     SensorManager(FancyLog& fancyLog);
     void begin();
     float readTemperature();
@@ -16,7 +16,7 @@ public:
     // Making DHT instance public like in the original code
     DHT dht;
 
-private:
+  private:
     FancyLog& fancyLog;
 };
 

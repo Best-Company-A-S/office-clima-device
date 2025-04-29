@@ -60,10 +60,6 @@ void setup() {
   // Initialize device identifier
   deviceID.initialize();
   deviceID.printDeviceInfo();
-  fancyLog.toSerial("Device ID: " + deviceID.getDeviceId(), INFO);
-  //DeviceIdentifier::initialize();
-  //DeviceIdentifier::printDeviceInfo();
-  //fancyLog.toSerial("Device ID: " + DeviceIdentifier::getDeviceId(), INFO);
 
   // Initialize LED matrix
   display.begin();

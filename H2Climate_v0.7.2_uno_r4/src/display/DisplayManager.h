@@ -14,7 +14,7 @@
 #endif
 
 class DisplayManager {
-public:
+  public:
     DisplayManager();
     void begin();
     void showHappyFace();
@@ -26,7 +26,7 @@ public:
     void showUpdateInitializing();
     void clear();
 
-private:
+  private:
     ArduinoLEDMatrix matrix;
 };
 

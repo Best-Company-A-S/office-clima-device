@@ -2,27 +2,12 @@
 #include "OTAManager.h"
 #include "../utils/DeviceIdentifier.h"
 
-// Initialize static members
-//WiFiUDP NetworkManager::ntpUDP;
-//const char* NetworkManager::ntpServer = "pool.ntp.org";
-
 NetworkManager::NetworkManager(DisplayManager& display, FancyLog& fancyLog)
     : display(display), fancyLog(fancyLog), updateAvailable(false) {}
 
 void NetworkManager::begin() {
-    // Initialize UDP socket for NTP
-    //ntpUDP.begin(5757);
-    
     // Connect to WiFi
     connectWiFi();
-    
-    // Sync time using NTP
-    /*setSyncProvider(NetworkManager::getNtpTime);
-    if (timeStatus() == timeSet) {
-        fancyLog.toSerial("Time synchronized", INFO);
-    } else {
-        fancyLog.toSerial("Failed to synchronize time", ERROR);
-    }*/
     
     // Initialize OTA
     OTAManager::begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS);
@@ -136,46 +121,6 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     display.showSadFace();
     return false;
 }
-
-/*
-time_t NetworkManager::getNtpTime() {
-    const int NTP_PACKET_SIZE = 48;
-    byte packetBuffer[NTP_PACKET_SIZE];
-    memset(packetBuffer, 0, NTP_PACKET_SIZE);
-    
-    packetBuffer[0] = 0b11100011;
-    packetBuffer[1] = 0;
-    packetBuffer[2] = 6;
-    packetBuffer[3] = 0xEC;
-    
-    // Try multiple NTP servers if the first one fails
-    const char* ntpServers[] = {"pool.ntp.org", "time.nist.gov", "time.google.com"};
-    const int numServers = 3;
-    
-    for (int server = 0; server < numServers; server++) {
-        ntpUDP.beginPacket(ntpServers[server], 123);
-        ntpUDP.write(packetBuffer, NTP_PACKET_SIZE);
-        ntpUDP.endPacket();
-        
-        // Wait up to 5 seconds for response
-        unsigned long startWait = millis();
-        while (millis() - startWait < 5000) {
-            if (ntpUDP.parsePacket()) {
-                ntpUDP.read(packetBuffer, NTP_PACKET_SIZE);
-                unsigned long secsSince1900 = (unsigned long)packetBuffer[40] << 24 |
-                                            (unsigned long)packetBuffer[41] << 16 |
-                                            (unsigned long)packetBuffer[42] << 8 |
-                                            (unsigned long)packetBuffer[43];
-                const unsigned long seventyYears = 2208988800UL;
-                unsigned long epoch = secsSince1900 - seventyYears;
-                return epoch;
-            }
-            delay(10);
-        }
-    }
-    return 0;
-}
-*/
 
 void NetworkManager::checkForUpdates() {
     fancyLog.toSerial("Checking for firmware updates...", INFO);

@@ -4,7 +4,7 @@
 #include "../utils/FancyLog.h"
 
 class BatteryMonitor {
-public:
+  public:
     BatteryMonitor(FancyLog& fancyLog);
     void begin();
 	void logStatus();
@@ -15,7 +15,7 @@ public:
     int estimateTimeRemaining(int percentage); // Returns estimated minutes remaining
     bool isLowBattery();
     
-private:
+  private:
     FancyLog& fancyLog;
     const int BATTERY_PIN = A0; // Analog pin for battery voltage reading
     

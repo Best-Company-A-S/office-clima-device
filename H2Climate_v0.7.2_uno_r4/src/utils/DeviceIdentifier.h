@@ -1,19 +1,18 @@
 #ifndef DEVICE_IDENTIFIER_H
 #define DEVICE_IDENTIFIER_H
 
-//#include "../config/Config.h"
 #include "../utils/FancyLog.h"
 #include <Arduino.h>
 #include <WiFiS3.h>
 
 class DeviceIdentifier {
-public:
+  public:
     DeviceIdentifier(FancyLog& fancyLog);
     static void initialize(); // Initialize the device identifier
     static String getDeviceId(); // Get the device ID as a string (lowercase hex format without colons)
 	void printDeviceInfo(); // Print device information to Serial
 
-private:
+  private:
     FancyLog& fancyLog;
     static String deviceId;
     static bool initialized;
