@@ -1,5 +1,8 @@
 #include "DeviceIdentifier.h"
 
+DeviceIdentifier::DeviceIdentifier(FancyLog& fancyLog)
+    : fancyLog(fancyLog) {}
+
 // Static member initialization
 String DeviceIdentifier::deviceId = "";
 bool DeviceIdentifier::initialized = false;
@@ -22,26 +25,29 @@ void DeviceIdentifier::printDeviceInfo() {
     if (!initialized) {
         initialize();
     }
-    
-    Serial.println("Device Information:");
-    Serial.println("------------------");
-    Serial.print("Device ID (MAC-based): ");
-    Serial.println(deviceId);
-    
+
+	fancyLog.toSerial("Device ID (MAC-based): " + deviceId, INFO);
+
+    String macAddress;
+
     byte mac[6];
     WiFi.macAddress(mac);
-    Serial.print("MAC Address: ");
+    //Serial.print("MAC Address: ");
     for (int i = 0; i < 6; i++) {
         if (mac[i] < 0x10) {
-            Serial.print("0");
+            //Serial.print("0");
+			macAddress += "0";
         }
         Serial.print(mac[i], HEX);
         if (i < 5) {
-            Serial.print(":");
+            //Serial.print(":");
+			macAddress += ":";
         }
     }
-    Serial.println();
-    Serial.println("------------------");
+
+	fancyLog.toSerial("MAC Address: " + macAddress, INFO);
+	Serial.println();
+	Serial.println(macAddress);
 }
 
 void DeviceIdentifier::generateDeviceId() {

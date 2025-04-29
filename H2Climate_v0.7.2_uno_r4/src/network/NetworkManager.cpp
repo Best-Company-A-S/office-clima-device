@@ -3,26 +3,26 @@
 #include "../utils/DeviceIdentifier.h"
 
 // Initialize static members
-WiFiUDP NetworkManager::ntpUDP;
-const char* NetworkManager::ntpServer = "pool.ntp.org";
+//WiFiUDP NetworkManager::ntpUDP;
+//const char* NetworkManager::ntpServer = "pool.ntp.org";
 
 NetworkManager::NetworkManager(DisplayManager& display, FancyLog& fancyLog)
     : display(display), fancyLog(fancyLog), updateAvailable(false) {}
 
 void NetworkManager::begin() {
     // Initialize UDP socket for NTP
-    ntpUDP.begin(5757);
+    //ntpUDP.begin(5757);
     
     // Connect to WiFi
     connectWiFi();
     
     // Sync time using NTP
-    setSyncProvider(NetworkManager::getNtpTime);
+    /*setSyncProvider(NetworkManager::getNtpTime);
     if (timeStatus() == timeSet) {
         fancyLog.toSerial("Time synchronized", INFO);
     } else {
         fancyLog.toSerial("Failed to synchronize time", ERROR);
-    }
+    }*/
     
     // Initialize OTA
     OTAManager::begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS);
@@ -137,6 +137,7 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     return false;
 }
 
+/*
 time_t NetworkManager::getNtpTime() {
     const int NTP_PACKET_SIZE = 48;
     byte packetBuffer[NTP_PACKET_SIZE];
@@ -174,6 +175,7 @@ time_t NetworkManager::getNtpTime() {
     }
     return 0;
 }
+*/
 
 void NetworkManager::checkForUpdates() {
     fancyLog.toSerial("Checking for firmware updates...", INFO);

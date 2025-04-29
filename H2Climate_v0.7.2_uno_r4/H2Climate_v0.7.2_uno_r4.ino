@@ -28,6 +28,7 @@ DisplayManager display;
 NetworkManager network(display, fancyLog);
 SensorManager sensors(fancyLog);
 BatteryMonitor battery(fancyLog);
+DeviceIdentifier deviceID(fancyLog);
 
 // Timing variables
 unsigned long previousMillis = 0;
@@ -57,9 +58,12 @@ void setup() {
   fancyLog.toSerial("Serial connection initialized", INFO);
 
   // Initialize device identifier
-  DeviceIdentifier::initialize();
-  DeviceIdentifier::printDeviceInfo();
-  fancyLog.toSerial("Device ID: " + DeviceIdentifier::getDeviceId(), INFO);
+  deviceID.initialize();
+  deviceID.printDeviceInfo();
+  fancyLog.toSerial("Device ID: " + deviceID.getDeviceId(), INFO);
+  //DeviceIdentifier::initialize();
+  //DeviceIdentifier::printDeviceInfo();
+  //fancyLog.toSerial("Device ID: " + DeviceIdentifier::getDeviceId(), INFO);
 
   // Initialize LED matrix
   display.begin();

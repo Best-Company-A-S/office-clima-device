@@ -20,12 +20,12 @@ private:
     DisplayManager& display;
     FancyLog& fancyLog;
     WiFiClient wifiClient;
-    static WiFiUDP ntpUDP;
-    static const char* ntpServer;
+    //static WiFiUDP ntpUDP;
+    //static const char* ntpServer;
     bool updateAvailable;
     String latestFirmwareVersion;
     
-    static time_t getNtpTime();
+    //static time_t getNtpTime();
     bool handleUpdateResponse(String& response);
     bool downloadAndApplyUpdate(String& downloadUrl, int firmwareSize);
 };
