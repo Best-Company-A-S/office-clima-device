@@ -140,9 +140,3 @@
 - Using Arduino's built-in timing functions
 - Non-blocking delay patterns
 - Event-driven architecture
-
-✅ 26. Anonymous and Lambda methods
-
-- Callback functions
-- Event handlers
-- Timer callbacks
