@@ -16,6 +16,7 @@
 #include "src/config/secrets.h"
 
 //¤=======================================================================================¤
+//| TODO: Update TDOD list                                                                |
 //| TODO: Add sound sensor (Sound sensor is garbango so maybe not)                        |
 //| TODO: Changeable settings                                                             |
 //| TODO: Add warning triggers at certain temperatures and humidities                     |

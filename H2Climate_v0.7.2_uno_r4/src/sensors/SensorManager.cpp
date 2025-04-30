@@ -33,10 +33,3 @@ float SensorManager::readHumidity() {
     // Direct call to DHT sensor exactly like original code
     return dht.readHumidity();
 }
-
-// TODO: Maybe remove this function
-bool SensorManager::isReady() {
-    // Always return true like in the original code
-    // The original code didn't have a specific isReady check
-    return true;
-} 

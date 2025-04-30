@@ -7,6 +7,9 @@ BatteryMonitor::BatteryMonitor(FancyLog& fancyLog)
 //¤=======================================================================================¤
 
 void BatteryMonitor::begin() {
+    // Change to 14-bit resolution
+	analogReadResolution(14);
+
     // Initialize battery monitoring pin
     pinMode(BATTERY_PIN, INPUT);
     
@@ -45,9 +48,9 @@ float BatteryMonitor::readVoltage() {
         rawValue = (rawValue + analogRead(BATTERY_PIN)) / 2;
         delay(1);
     }
-    
-    // Convert to voltage (Arduino UNO R4 has 10-bit ADC with 3.3V reference)
-    float voltage = rawValue * (3.3 / 1023.0);
+
+	// Convert to voltage (The ADC is set to 14-bit resolution with 3.3V reference)
+    float voltage = rawValue * (3.3 / 16383.0);
 
     return voltage;
 }

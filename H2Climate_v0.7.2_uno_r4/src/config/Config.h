@@ -74,15 +74,22 @@ constexpr const int DATA_BUFFER_SIZE = 1;
 //¤===============================¤
 //| Battery Monitor Configuration |
 //¤===============================¤=======================================================¤
-// Analog pin for battery monitoring
-constexpr const int BATTERY_PIN = A0;
-// Reference voltage for ADC in volts
-constexpr const float BATTERY_REFERENCE_VOLTAGE = 3.3;
-// Full battery voltage in volts
-constexpr const float BATTERY_FULL_VOLTAGE = 4.2;
-// Empty battery voltage in volts
-constexpr const float BATTERY_EMPTY_VOLTAGE = 3.3;
-// Voltage divider ratio (if using a resistor divider)
-constexpr const float BATTERY_RESISTOR_RATIO = 2.0;
+constexpr const int BATTERY_PIN = A0; // Analog pin for battery voltage reading
+
+// These are the actual voltage values of a 9V battery
+constexpr const float BATTERY_MAX_VOLTAGE = 9.0; // 9V battery max voltage
+constexpr const float BATTERY_MIN_VOLTAGE = 7.0; // Cutoff voltage for 9V battery
+
+// These values should match what your voltage divider is showing
+constexpr const float CALIBRATED_FULL_VOLTAGE = 0.7; // For a full 9V battery, your readings show ~0.7V
+constexpr const float CALIBRATED_EMPTY_VOLTAGE = 0.5; // For an empty battery (estimate)
+
+// This ratio is for display purposes only - to show the estimated actual battery voltage
+// Based on your readings of ~0.7V corresponding to an actual 9V battery
+constexpr const float VOLTAGE_TO_BATTERY = 13.0; // Multiplier to convert measured voltage to actual battery voltage
+
+// Estimated battery life in minutes at full charge
+constexpr const int FULL_BATTERY_LIFE_MINUTES = 480; // 8 hours for a typical 9V battery
+constexpr const int LOW_BATTERY_THRESHOLD = 20; // Low battery warning threshold (percentage)
 
 #endif // CONFIG_H 

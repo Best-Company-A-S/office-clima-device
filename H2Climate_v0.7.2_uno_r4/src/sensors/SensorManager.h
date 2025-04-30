@@ -11,10 +11,7 @@ class SensorManager {
     void begin();
     float readTemperature();
     float readHumidity();
-    bool isReady();
-    
-    // Making DHT instance public like in the original code
-    DHT dht;
+    DHT dht; // Public DHT instance for legacy reasons
 
   private:
     FancyLog& fancyLog;

@@ -50,14 +50,12 @@ bool NetworkManager::connectWiFi() {
     }
     
     if (WiFi.status() == WL_CONNECTED && WiFi.localIP()[0] != 0) {
-        fancyLog.toSerial("WiFi connected, IP: " + WiFi.localIP().toString());
-        // Log received signal strength
-        long rssi = WiFi.RSSI();
-        fancyLog.toSerial("Signal strength (RSSI): " + String(rssi) + " dBm");
+		fancyLog.toSerial("WiFi connected successfully | IP: " + WiFi.localIP().toString() +
+						  " | RSSI: " + String(WiFi.RSSI()) + " dBm", INFO);
         display.showHappyFace();
         return true;
     } else {
-        fancyLog.toSerial("WiFi connection failed");
+        fancyLog.toSerial("WiFi connection failed", ERROR);
         display.showSadFace();
         return false;
     }
