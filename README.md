@@ -11,16 +11,17 @@ H2Climate is an Arduino-based IoT device that monitors environmental conditions 
 
 ### Key Features
 
-- 🌡️ Real-time temperature monitoring
-- 💧 Humidity tracking
-- 🔄 Automatic data synchronization
-- 📶 WiFi connectivity
-- 🕰️ NTP time synchronization
-- 😊 Visual status indicators using LED matrix
-- 🔋 Battery monitoring and management
-- 🔄 OTA (Over-The-Air) updates
-- 📊 Data buffering for efficient transmission
-- 🚨 Error handling and status reporting
+- 🌡️ Real-time temperature monitoring with DHT22 sensor
+- 💧 Humidity tracking with precision readings
+- 🔋 Battery monitoring with voltage tracking and time estimation
+- 🔄 Automatic data synchronization with configurable intervals
+- 📶 WiFi connectivity with auto-reconnection
+- 🕰️ NTP time synchronization for accurate timestamps
+- 😊 Visual status indicators using built-in LED matrix
+- 🔄 OTA (Over-The-Air) firmware updates
+- 📊 Data buffering for reliable transmission
+- 🚨 Comprehensive error handling and status reporting
+- 🆔 MAC-based unique device identification
 
 ## 📈 Project Status
 
@@ -47,8 +48,8 @@ flowchart LR
 - Arduino UNO R4 WiFi
 - DHT22 Temperature & Humidity Sensor
 - LED Matrix (built into UNO R4)
-- Power supply
 - Battery monitoring circuit
+- Power supply
 
 ### Hardware Connections
 
@@ -67,6 +68,23 @@ graph TD
     style D fill:#fff9db,stroke:#FF9800
     style E fill:#e6e6fa,stroke:#9370DB
 ```
+
+## 📦 Software Components
+
+The firmware (v0.7.2) has been organized into a modular architecture for improved maintainability:
+
+### Core Components
+
+- **DisplayManager**: Controls the LED matrix display for visual status feedback
+- **NetworkManager**: Manages WiFi connectivity, API communications, and OTA updates
+- **SensorManager**: Interfaces with DHT22 temperature and humidity sensors
+- **BatteryMonitor**: Monitors battery voltage and estimates remaining time
+- **DeviceIdentifier**: Generates and manages unique device identifiers based on MAC address
+
+### Utilities
+
+- **FancyLog**: Provides advanced logging functionalities with level-based formatting
+- **DeviceIdentifier**: Manages device identity and MAC address-based identification
 
 ## 📦 Software Dependencies
 
@@ -94,19 +112,24 @@ graph TD
    cd office-clima-device
    ```
 
-2. Create a `secrets.h` file in the project directory with your WiFi credentials:
+2. Create a `secrets.h` file in the `/H2Climate_v0.7.2_uno_r4/src/config/` directory with your WiFi credentials:
 
    ```cpp
+   #ifndef SECRETS_H
+   #define SECRETS_H
+
+   // WiFi Credentials - replace with your network information
    #define WIFI_SSID "your_wifi_ssid"
    #define WIFI_PASS "your_wifi_password"
+
+   #endif // SECRETS_H
    ```
 
-3. Modify `params.h` with your specific device settings:
+3. Update server settings in `Config.h` if needed:
 
    ```cpp
-   #define DEVICE_ID "your_unique_device_id"
-   #define SERVER_URL "your_server_url_or_ip"
-   #define SERVER_PORT 3000
+   constexpr const char* SERVER_URL = "your_server_url_or_ip";
+   constexpr const int SERVER_PORT = 3000;
    ```
 
 4. Upload the code to your Arduino using the Arduino IDE or PlatformIO
@@ -143,7 +166,8 @@ sequenceDiagram
 | v0.4    | Added LED matrix status indicators and improved error handling |
 | v0.5    | Implemented battery monitoring                                 |
 | v0.6    | Added OTA update capability                                    |
-| v0.7    | Improved data buffering and error handling                     |
+| v0.7.1  | Improved data buffering and error handling                     |
+| v0.7.2  | Enhanced battery monitoring, improved display animations       |
 
 ## 📝 Future Improvements
 
