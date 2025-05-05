@@ -10,7 +10,7 @@
 #include "src/display/DisplayManager.h"
 #include "src/network/NetworkManager.h"
 #include "src/sensors/SensorManager.h"
-#include "src/sensors/BatteryMonitor.h"
+#include "src/utils/BatteryMonitor.h"
 #include "src/utils/FancyLog.h"
 #include "src/utils/DeviceIdentifier.h"
 #include "src/config/secrets.h"
