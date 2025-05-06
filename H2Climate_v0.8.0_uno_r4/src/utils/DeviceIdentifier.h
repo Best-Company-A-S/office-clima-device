@@ -1,9 +1,10 @@
 #ifndef DEVICE_IDENTIFIER_H
 #define DEVICE_IDENTIFIER_H
 
+#include "../config/Config.h"
 #include "../utils/FancyLog.h"
-#include <Arduino.h>
-#include <WiFiS3.h>
+//#include <Arduino.h>
+//#include <WiFiS3.h>
 
 class DeviceIdentifier {
   public:

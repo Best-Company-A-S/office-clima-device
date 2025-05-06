@@ -1,5 +1,4 @@
 #include "BatteryMonitor.h"
-#include <Arduino.h>
 
 BatteryMonitor::BatteryMonitor(FancyLog& fancyLog)
     : fancyLog(fancyLog) {}

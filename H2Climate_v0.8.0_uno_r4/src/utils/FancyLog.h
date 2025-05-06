@@ -1,6 +1,7 @@
 #ifndef FANCYLOG_H
 #define FANCYLOG_H
 
+//#include "../config/Config.h"
 #include <Arduino.h>
 
 enum LogLevel {

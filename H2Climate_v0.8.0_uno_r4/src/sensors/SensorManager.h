@@ -2,8 +2,8 @@
 #define SENSOR_MANAGER_H
 
 #include "../config/Config.h"
-#include "../utils/FancyLog.h"
-#include "DHT.h"
+//#include "../utils/FancyLog.h"
+//#include "DHT.h"
 
 class SensorManager {
   public:

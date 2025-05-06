@@ -5,6 +5,7 @@
 #include "../config/Config.h"
 
 // Define scrolling direction constants if not defined
+/*
 #ifndef SCROLL_LEFT
 #define SCROLL_LEFT 0
 #endif
@@ -12,6 +13,7 @@
 #ifndef SCROLL_RIGHT 
 #define SCROLL_RIGHT 1
 #endif
+*/
 
 class DisplayManager {
   public:

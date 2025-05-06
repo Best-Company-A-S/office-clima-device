@@ -1,7 +1,8 @@
 #ifndef OTA_MANAGER_H
 #define OTA_MANAGER_H
 
-#include <WiFiS3.h>
+#include "../config/Config.h"
+//#include <WiFiS3.h>
 
 class OTAManager {
   public:

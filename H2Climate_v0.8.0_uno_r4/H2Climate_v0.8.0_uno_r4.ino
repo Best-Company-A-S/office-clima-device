@@ -7,13 +7,16 @@
  */
 
 #include "src/config/Config.h"
+#include "src/config/secrets.h"
 #include "src/display/DisplayManager.h"
 #include "src/network/NetworkManager.h"
+
+#include "src/network/OTAManager.h"
+
 #include "src/sensors/SensorManager.h"
 #include "src/utils/BatteryMonitor.h"
-#include "src/utils/FancyLog.h"
 #include "src/utils/DeviceIdentifier.h"
-#include "src/config/secrets.h"
+#include "src/utils/FancyLog.h"
 
 //¤=======================================================================================¤
 //| TODO: Update TDOD list                                                                |

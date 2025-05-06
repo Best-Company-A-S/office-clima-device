@@ -1,6 +1,6 @@
 #include "NetworkManager.h"
-#include "OTAManager.h"
-#include "../utils/DeviceIdentifier.h"
+//#include "OTAManager.h"
+//#include "../utils/DeviceIdentifier.h"
 
 NetworkManager::NetworkManager(DisplayManager& display, FancyLog& fancyLog)
     : display(display), fancyLog(fancyLog), updateAvailable(false) {}

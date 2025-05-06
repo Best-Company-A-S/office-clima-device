@@ -2,9 +2,10 @@
 #define NETWORK_MANAGER_H
 
 #include "../config/Config.h"
+#include "../network/OTAManager.h"
 #include "../display/DisplayManager.h"
-#include "../utils/FancyLog.h"
-#include "OTAManager.h"
+//#include "../utils/FancyLog.h"
+//#include "OTAManager.h"
 
 class NetworkManager {
   public:
