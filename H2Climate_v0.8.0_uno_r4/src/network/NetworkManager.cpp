@@ -1,9 +1,7 @@
 #include "NetworkManager.h"
-//#include "OTAManager.h"
-//#include "../utils/DeviceIdentifier.h"
 
-NetworkManager::NetworkManager(DisplayManager& display, FancyLog& fancyLog)
-    : display(display), fancyLog(fancyLog), updateAvailable(false) {}
+NetworkManager::NetworkManager(FancyLog& fancyLog, OTAManager& otaManager, DisplayManager& display)
+    : fancyLog(fancyLog), otaManager(otaManager), display(display), updateAvailable(false) {}
 
 void NetworkManager::begin() {
     // Connect to WiFi

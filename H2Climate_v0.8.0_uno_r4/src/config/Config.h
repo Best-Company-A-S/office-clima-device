@@ -6,9 +6,6 @@
 #include <TimeLib.h>
 #include <WiFiS3.h>
 #include <DHT.h>
-
-//#include <ArduinoOTA.h>
-
 #include <ArduinoJson.h>
 #include <Arduino_LED_Matrix.h>
 #include <ArduinoGraphics.h>

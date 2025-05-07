@@ -1,7 +1,6 @@
 #include "DeviceIdentifier.h"
 
-DeviceIdentifier::DeviceIdentifier(FancyLog& fancyLog)
-    : fancyLog(fancyLog) {}
+DeviceIdentifier::DeviceIdentifier() {}
 
 // Static member initialization
 String DeviceIdentifier::deviceId = "";
@@ -19,13 +18,6 @@ String DeviceIdentifier::getDeviceId() {
         initialize();
     }
     return deviceId;
-}
-
-void DeviceIdentifier::printDeviceInfo() {
-    if (!initialized) {
-        initialize();
-    }
-	fancyLog.toSerial("Device ID (MAC-based): " + deviceId, INFO);
 }
 
 void DeviceIdentifier::generateDeviceId() {

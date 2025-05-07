@@ -2,8 +2,7 @@
 #define SENSOR_MANAGER_H
 
 #include "../config/Config.h"
-//#include "../utils/FancyLog.h"
-//#include "DHT.h"
+#include "../utils/FancyLog.h"
 
 class SensorManager {
   public:
@@ -11,9 +10,9 @@ class SensorManager {
     void begin();
     float readTemperature();
     float readHumidity();
-    DHT dht; // Public DHT instance for legacy reasons
 
   private:
+    DHT dht;
     FancyLog& fancyLog;
 };
 

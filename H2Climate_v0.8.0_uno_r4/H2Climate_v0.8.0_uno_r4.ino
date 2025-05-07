@@ -6,17 +6,9 @@
  * automatic firmware updates, LED matrix status display, and battery monitoring.
  */
 
-#include "src/config/Config.h"
-#include "src/config/secrets.h"
-#include "src/display/DisplayManager.h"
 #include "src/network/NetworkManager.h"
-
-#include "src/network/OTAManager.h"
-
 #include "src/sensors/SensorManager.h"
 #include "src/utils/BatteryMonitor.h"
-#include "src/utils/DeviceIdentifier.h"
-#include "src/utils/FancyLog.h"
 
 //¤=======================================================================================¤
 //| TODO: Update TDOD list                                                                |
@@ -28,11 +20,12 @@
 
 // Global objects
 FancyLog fancyLog;
+OTAManager otaManager;
 DisplayManager display;
-NetworkManager network(display, fancyLog);
+NetworkManager network(fancyLog, otaManager, display);
 SensorManager sensors(fancyLog);
 BatteryMonitor battery(fancyLog);
-DeviceIdentifier deviceID(fancyLog);
+DeviceIdentifier deviceID;
 
 // Timing variables
 unsigned long previousMillis = 0;
@@ -63,7 +56,7 @@ void setup() {
 
   // Initialize device identifier
   deviceID.initialize();
-  deviceID.printDeviceInfo();
+  fancyLog.toSerial("Device ID (MAC-based): " + String(deviceID.getDeviceId()), INFO);
 
   // Initialize LED matrix
   display.begin();

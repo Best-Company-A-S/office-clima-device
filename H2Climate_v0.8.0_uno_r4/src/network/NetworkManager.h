@@ -4,12 +4,11 @@
 #include "../config/Config.h"
 #include "../network/OTAManager.h"
 #include "../display/DisplayManager.h"
-//#include "../utils/FancyLog.h"
-//#include "OTAManager.h"
+#include "../utils/FancyLog.h"
 
 class NetworkManager {
   public:
-    NetworkManager(DisplayManager& display, FancyLog& fancyLog);
+    NetworkManager(FancyLog& fancyLog, OTAManager& otaManager, DisplayManager& display);
     void begin();
     bool connectWiFi();
     bool sendHttpPostRequest(String jsonPayload, String apiRoute);
@@ -18,8 +17,9 @@ class NetworkManager {
     bool isConnected() { return WiFi.status() == WL_CONNECTED; }
 
   private:
-    DisplayManager& display;
     FancyLog& fancyLog;
+    OTAManager& otaManager;
+    DisplayManager& display;
     WiFiClient wifiClient;
     bool updateAvailable;
     String latestFirmwareVersion;

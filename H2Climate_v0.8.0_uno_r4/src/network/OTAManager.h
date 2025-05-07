@@ -2,10 +2,10 @@
 #define OTA_MANAGER_H
 
 #include "../config/Config.h"
-//#include <WiFiS3.h>
 
 class OTAManager {
   public:
+    OTAManager();
     static void begin(IPAddress localIP, const char* ssid, const char* password);
     static void poll();
     static bool beginUpdate(int size);

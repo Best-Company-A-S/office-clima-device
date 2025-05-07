@@ -1,8 +1,7 @@
 #ifndef FANCYLOG_H
 #define FANCYLOG_H
 
-//#include "../config/Config.h"
-#include <Arduino.h>
+#include "../config/Config.h"
 
 enum LogLevel {
   INFO,
@@ -13,6 +12,7 @@ enum LogLevel {
 
 class FancyLog {
   public:
+    FancyLog();
     void begin(unsigned long baudRate = 9600);
     void toSerial(const String& message);
     void toSerial(const String& message, LogLevel level);

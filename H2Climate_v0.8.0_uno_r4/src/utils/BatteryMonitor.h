@@ -2,7 +2,7 @@
 #define BATTERY_MONITOR_H
 
 #include "../config/Config.h"
-//#include "../utils/FancyLog.h"
+#include "../utils/FancyLog.h"
 
 class BatteryMonitor {
   public:

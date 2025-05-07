@@ -3,6 +3,8 @@
 //¤===========================¤
 //| FancyLog Public Functions |
 //¤===========================¤===========================================================¤
+FancyLog::FancyLog() {}
+
 void FancyLog::begin(unsigned long baudRate) {
   Serial.begin(baudRate);
 

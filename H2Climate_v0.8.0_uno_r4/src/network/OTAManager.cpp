@@ -1,6 +1,8 @@
 #include "OTAManager.h"
 #include <ArduinoOTA.h>
 
+OTAManager::OTAManager() {}
+
 void OTAManager::begin(IPAddress localIP, const char* ssid, const char* password) {
     ArduinoOTA.begin(localIP, ssid, password, InternalStorage);
 }
