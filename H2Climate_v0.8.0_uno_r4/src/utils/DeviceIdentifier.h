@@ -13,6 +13,9 @@ class DeviceIdentifier {
     static String deviceId;
     static bool initialized;
     static void generateDeviceId(); // Generate device ID from MAC address
+
+    static void loadDeviceIdFromEEPROM(); // Reads deviceId from memory
+    static void saveDeviceIdToEEPROM();  // Writes deviceId to memory
 };
 
 #endif // DEVICE_IDENTIFIER_H 

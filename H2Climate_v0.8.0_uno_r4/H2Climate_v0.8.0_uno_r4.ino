@@ -44,19 +44,29 @@ struct SensorData {
 };
 SensorData dataBuffer[DATA_BUFFER_SIZE]; // Using DATA_BUFFER_SIZE defined in Config.h
 
+
+void clearEEPROM() {
+    for (int i = 0; i < EEPROM.length(); i++) {
+        EEPROM.write(i, 0xFF); // Writes 0xFF (default empty value) to the entire EEPROM
+    }
+    Serial.println("EEPROM cleared");
+}
+
+
 //¤============¤
 //| Setup loop |
 //¤============¤==========================================================================¤
 void setup() {
-  	fancyLog.toSerial("Starting H2Climate Device", INFO);
-
-  	// Initialize components
+  	// Initialize serial connection and logger
   	fancyLog.begin(9600);
   	fancyLog.toSerial("Serial connection initialized", INFO);
 
-  	// Initialize device identifier
-  	deviceID.initialize();
-  	fancyLog.toSerial("Device ID (MAC-based): " + String(deviceID.getDeviceId()), INFO);
+
+	//clearEEPROM(); // Call it *only once*! Comment it out after the first run
+
+
+	// Calling getDeviceId also initialize the DeviceIdentifier
+    fancyLog.toSerial("Starting H2Climate Device | ID: " + String(deviceID.getDeviceId()), INFO);
 
   	// Initialize LED matrix
   	display.begin();
