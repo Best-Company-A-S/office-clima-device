@@ -19,7 +19,7 @@ String DeviceIdentifier::getDeviceId() {
 
 void DeviceIdentifier::initialize() {
     // Try to load device ID from EEPROM
-    loadDeviceIdFromEEPROM();
+    //loadDeviceIdFromEEPROM();
 
     // If still empty after loading from EEPROM, generate a new one
     if (deviceId.isEmpty() || deviceId == "") {
@@ -29,7 +29,7 @@ void DeviceIdentifier::initialize() {
         generateDeviceId();
 
         // Save the newly generated ID to EEPROM
-        saveDeviceIdToEEPROM();
+        //saveDeviceIdToEEPROM();
     }
 
     initialized = true;

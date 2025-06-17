@@ -9,14 +9,7 @@
 #include "src/network/NetworkManager.h"
 #include "src/sensors/SensorManager.h"
 #include "src/utils/BatteryMonitor.h"
-
-//¤=======================================================================================¤
-//| TODO: Update TDOD list                                                                |
-//| TODO: Add sound sensor (Sound sensor is garbango so maybe not)                        |
-//| TODO: Changeable settings                                                             |
-//| TODO: Add warning triggers at certain temperatures and humidities                     |
-//| TODO: Store more sensor data before sending a packet to reduce packet spam            |
-//¤=======================================================================================¤
+#include "src/network/WebServer.h" // Add WebServer include
 
 // Global objects
 FancyLog fancyLog;
@@ -26,6 +19,7 @@ NetworkManager network(fancyLog, otaManager, display);
 SensorManager sensors(fancyLog);
 BatteryMonitor battery(fancyLog);
 DeviceIdentifier deviceID;
+WebServer webServer(fancyLog, network); // Add WebServer object
 
 // Timing variables
 unsigned long previousMillis = 0;
@@ -95,6 +89,11 @@ void setup() {
 
   	// Initial update check
   	network.checkForUpdates();
+
+  	// Initialize web server
+  	webServer.begin();
+  	fancyLog.toSerial("Web interface available at http://" + WiFi.localIP().toString(), INFO);
+
   	fancyLog.toSerial("Setup complete", INFO);
 }
 
@@ -104,6 +103,9 @@ void setup() {
 void loop() {
   	// Handle OTA updates
   	network.pollOTA();
+
+  	// Handle web server client requests
+  	webServer.handleClient();
 
   	unsigned long currentMillis = millis();
   	unsigned long timeUntilNextReading = 0;
