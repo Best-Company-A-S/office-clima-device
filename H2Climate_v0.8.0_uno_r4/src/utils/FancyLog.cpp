@@ -11,6 +11,8 @@ void FancyLog::begin(unsigned long baudRate) {
   	while(!Serial) {
     	delay(10); // Wait for Serial to be ready
   	}
+
+	Serial.println("Serial connection initialized");
 }
 
 void FancyLog::toSerial(const String& message) {

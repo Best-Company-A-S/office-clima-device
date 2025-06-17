@@ -5,7 +5,7 @@ WebServer::WebServer(FancyLog& log, NetworkManager& network)
 
 void WebServer::begin() {
     server.begin();
-    fancyLog.toSerial("Web server started on port 80", INFO);
+    fancyLog.toSerial("WEB server initialized");
 }
 
 void WebServer::handleClient() {
@@ -209,7 +209,7 @@ void WebServer::sendHeader(WiFiClient& client, const char* title) {
 void WebServer::sendFooter(WiFiClient& client) {
     client.println("</div>");
     client.println("<footer style='text-align: center; padding: 1rem; color: #7f8c8d; font-size: 0.8rem;'>");
-    client.println("H2Climate &copy; " + String(year()) + " | Firmware v" + String(FIRMWARE_VERSION));
+    client.println("H2Climate &copy; " + String(year()) + " | Firmware " + String(FIRMWARE_VERSION));
     client.println("</footer>");
     client.println("</body>");
     client.println("</html>");

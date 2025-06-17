@@ -18,22 +18,18 @@ String DeviceIdentifier::getDeviceId() {
 }
 
 void DeviceIdentifier::initialize() {
-    // Try to load device ID from EEPROM
-    //loadDeviceIdFromEEPROM();
+    //loadDeviceIdFromEEPROM(); // Try to load device ID from EEPROM
 
     // If still empty after loading from EEPROM, generate a new one
     if (deviceId.isEmpty() || deviceId == "") {
-        Serial.println("No device ID found in EEPROM. Generating a new one...");
+        Serial.println("No device ID found in EEPROM. Generating a new one");
 
-		// Generate a new device ID based on the MAC address
-        generateDeviceId();
+        generateDeviceId(); // Generate a new device ID based on the MAC address
 
-        // Save the newly generated ID to EEPROM
-        //saveDeviceIdToEEPROM();
+        //saveDeviceIdToEEPROM(); // Save the newly generated ID to EEPROM
     }
 
     initialized = true;
-    Serial.println("Device Identifier Initialized. Device ID: " + deviceId);
 }
 
 void DeviceIdentifier::generateDeviceId() {

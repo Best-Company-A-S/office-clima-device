@@ -4,32 +4,61 @@ SensorManager::SensorManager(FancyLog& fancyLog)
     : fancyLog(fancyLog), dht(DHT22_PIN, DHTTYPE) {}
 
 void SensorManager::begin() {
-    fancyLog.toSerial("Initializing DHT sensor", INFO);
+    initializeDHTSensor(); // Initialize the DHT sensor
+	initializeCO2Sensor(); // Initialize the CO2 sensor
+}
+
+void SensorManager::testSensors() {
+	fancyLog.toSerial("vvv [Testing sensors ] vvv");
+    testDHTSensor(); // Test DHT sensor
+	testCO2Sensor(); // Test CO2 sensor
+	fancyLog.toSerial("^^^ [Testing complete] ^^^");
+}
+
+//¤======================¤
+//| DHT sensor Functions |
+//¤======================¤================================================================¤
+
+void SensorManager::initializeDHTSensor() {
     dht.begin();
-    
-    // Give the sensor time to stabilize - this is critical
-    // Using the exact same delay as in the original code
-    delay(2000);
-    
-    // Attempt an initial reading to verify the sensor is working
-    float temp = dht.readTemperature();
-    float hum = dht.readHumidity();
-    
+	fancyLog.toSerial("DHT sensor initialized");
+}
+
+void SensorManager::testDHTSensor() {
+	fancyLog.toSerial("Testing DHT sensor");
+
+	// uncomment if delay is needed for sensor stabilization
+    //delay(2000); // Give the sensor time to stabilize
+
+    // Attempt a test reading to verify the sensor is working
+    float temp = readTemperature();
+    float hum = readHumidity();
+
     if (isnan(temp) || isnan(hum)) {
-        fancyLog.toSerial("Initial sensor reading failed, but continuing anyway", WARNING);
+        fancyLog.toSerial("DHT sensor test failed, but continuing anyway");
     } else {
-        fancyLog.toSerial("Initial reading: Temp=" + String(temp) + "°C, Humidity=" + String(hum) + "%", INFO);
+        fancyLog.toSerial("DHT sensor test result: Temp=" + String(temp) + "°C, Humidity=" + String(hum) + "%");
     }
-    
-    fancyLog.toSerial("DHT sensor initialized", INFO);
 }
 
 float SensorManager::readTemperature() {
-    // Direct call to DHT sensor exactly like original code
     return dht.readTemperature();
 }
 
 float SensorManager::readHumidity() {
-    // Direct call to DHT sensor exactly like original code
     return dht.readHumidity();
+}
+
+//¤======================¤
+//| CO2 sensor Functions |
+//¤======================¤================================================================¤
+
+void SensorManager::initializeCO2Sensor() {
+	// Simulated initialization for CO2 sensor as it didn't arrive in time
+	fancyLog.toSerial("CO2 sensor initialized");
+}
+
+void SensorManager::testCO2Sensor() {
+	fancyLog.toSerial("Testing CO2 sensor");
+	fancyLog.toSerial("CO2 sensor test failed, but continuing anyway");
 }

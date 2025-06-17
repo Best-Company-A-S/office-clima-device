@@ -6,14 +6,10 @@ BatteryMonitor::BatteryMonitor(FancyLog& fancyLog)
 //¤=======================================================================================¤
 
 void BatteryMonitor::begin() {
-    // Change to 14-bit resolution
-	analogReadResolution(14);
-
-    // Initialize battery monitoring pin
-    pinMode(BATTERY_PIN, INPUT);
-    
-    // Take an initial reading
-    logStatus();
+	analogReadResolution(14); // Change ADC to 14-bit resolution
+    pinMode(BATTERY_PIN, INPUT); // Initialize battery monitoring pin
+    //logStatus(); // Take an initial reading
+	fancyLog.toSerial("BAT monitr initialized");
 }
 
 //¤=======================================================================================¤

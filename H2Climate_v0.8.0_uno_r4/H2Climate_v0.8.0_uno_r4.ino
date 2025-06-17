@@ -14,10 +14,10 @@
 // Global objects
 FancyLog fancyLog;
 OTAManager otaManager;
-DisplayManager display;
-NetworkManager network(fancyLog, otaManager, display);
 SensorManager sensors(fancyLog);
+DisplayManager display(fancyLog);
 BatteryMonitor battery(fancyLog);
+NetworkManager network(fancyLog, otaManager, display);
 DeviceIdentifier deviceID;
 WebServer webServer(fancyLog, network); // Add WebServer object
 
@@ -51,31 +51,26 @@ void clearEEPROM() {
 //| Setup loop |
 //¤============¤==========================================================================¤
 void setup() {
-  	// Initialize serial connection and logger
-  	fancyLog.begin(9600);
-  	fancyLog.toSerial("Serial connection initialized", INFO);
 
+    //clearEEPROM(); // Call it *only once*! Comment it out after the first run
 
-	//clearEEPROM(); // Call it *only once*! Comment it out after the first run
+  	fancyLog.begin(9600); // Initialize serial connection and logger
 
 
 	// Calling getDeviceId also initialize the DeviceIdentifier
     fancyLog.toSerial("Starting H2Climate Device | ID: " + String(deviceID.getDeviceId()), INFO);
 
-  	// Initialize LED matrix
-  	display.begin();
-  	display.showNeutralFace();  // Show neutral face during setup
 
-  	// Initialize sensors
-  	fancyLog.toSerial("Initializing sensors", INFO);
-  	sensors.begin();
-  
-  	// Initialize battery monitoring
-  	fancyLog.toSerial("Initializing battery monitoring", INFO);
-  	battery.begin();
+  	display.begin(); // Initialize LED matrix
+    battery.begin(); // Initialize battery monitoring
+  	sensors.begin(); // Initialize sensors
+    webServer.begin(); // Initialize web server
 
-  	// Connect to network after sensors are initialized
-  	network.begin();
+
+	//sensors.testSensors(); // Test sensors to ensure they are working
+
+
+  	network.begin(); // Connect to network after sensors are initialized
 
   	// Register device with server
   	StaticJsonDocument<256> jsonDoc;
@@ -87,14 +82,10 @@ void setup() {
   	serializeJson(jsonDoc, registerData);
   	network.sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
 
-  	// Initial update check
-  	network.checkForUpdates();
+  	network.checkForUpdates(); // Initial update check
 
-  	// Initialize web server
-  	webServer.begin();
-  	fancyLog.toSerial("Web interface available at http://" + WiFi.localIP().toString(), INFO);
 
-  	fancyLog.toSerial("Setup complete", INFO);
+    fancyLog.toSerial("Setup complete: Web interface available at http://" + WiFi.localIP().toString() + ":80", INFO);
 }
 
 //¤==============¤
@@ -118,14 +109,14 @@ void loop() {
   	}
 
   	// Calculate time until next reading
-  	if (currentMillis - previousMillis < LOOP_INTERVAL) {
+  	/*if (currentMillis - previousMillis < LOOP_INTERVAL) {
     	timeUntilNextReading = LOOP_INTERVAL - (currentMillis - previousMillis);
 
     	// Every 10 seconds, show time remaining until next data transmission
     	if (timeUntilNextReading % 10000 < 100) {
       		fancyLog.toSerial("Next transmission in " + String(timeUntilNextReading / 1000) + "s");
     	}
-  	}
+  	}*/
 
   	// Regular sensor readings and data transmission
   	if (currentMillis - previousMillis >= LOOP_INTERVAL) {
@@ -172,10 +163,10 @@ void loop() {
   	}
 
   	// Log battery status periodically
-  	if (currentMillis - previousBatteryLogMillis >= BATTERY_LOG_INTERVAL) {
+  	/*if (currentMillis - previousBatteryLogMillis >= BATTERY_LOG_INTERVAL) {
     	previousBatteryLogMillis = currentMillis;
     	battery.logStatus();
-  	}
+  	}*/
 
   	// Check for updates periodically
   	if (currentMillis - previousUpdateCheckMillis >= CHECK_INTERVAL) {

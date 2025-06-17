@@ -3,6 +3,8 @@
 NetworkManager::NetworkManager(FancyLog& fancyLog, OTAManager& otaManager, DisplayManager& display)
     : fancyLog(fancyLog), otaManager(otaManager), display(display), updateAvailable(false) {}
 
+//#####################################################################################################################
+
 void NetworkManager::begin() {
     // Connect to WiFi
     connectWiFi();
@@ -11,9 +13,13 @@ void NetworkManager::begin() {
     OTAManager::begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS);
 }
 
+//#####################################################################################################################
+
 void NetworkManager::pollOTA() {
     OTAManager::poll();
 }
+
+//#####################################################################################################################
 
 bool NetworkManager::connectWiFi() {
     fancyLog.toSerial("Connecting to WiFi: " + String(WIFI_SSID), INFO);
@@ -58,6 +64,8 @@ bool NetworkManager::connectWiFi() {
         return false;
     }
 }
+
+//#####################################################################################################################
 
 bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     int apiAttempts = 0;
@@ -117,6 +125,8 @@ bool NetworkManager::sendHttpPostRequest(String jsonPayload, String apiRoute) {
     display.showSadFace();
     return false;
 }
+
+//#####################################################################################################################
 
 void NetworkManager::checkForUpdates() {
     fancyLog.toSerial("Checking for firmware updates...", INFO);
@@ -239,6 +249,8 @@ void NetworkManager::checkForUpdates() {
     display.showSadFace();
 }
 
+//#####################################################################################################################
+
 bool NetworkManager::handleUpdateResponse(String& jsonBody) {
     fancyLog.toSerial("Parsing update response: " + jsonBody);
     
@@ -300,6 +312,8 @@ bool NetworkManager::handleUpdateResponse(String& jsonBody) {
     
     return downloadAndApplyUpdate(downloadUrl, firmwareSize);
 }
+
+//#####################################################################################################################
 
 bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSize) {
     if (!wifiClient.connect(SERVER_URL, SERVER_PORT)) {
@@ -435,7 +449,7 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
             delay(10);
         }
     }
-    
+
     // Close the WiFi client since we're done with it
     wifiClient.stop();
     

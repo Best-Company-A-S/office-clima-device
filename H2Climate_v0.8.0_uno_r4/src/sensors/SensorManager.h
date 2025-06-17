@@ -8,10 +8,15 @@ class SensorManager {
   public:
     SensorManager(FancyLog& fancyLog);
     void begin();
+	void testSensors();
     float readTemperature();
     float readHumidity();
 
   private:
+	void initializeDHTSensor();
+	void initializeCO2Sensor();
+	void testDHTSensor();
+	void testCO2Sensor();
     DHT dht;
     FancyLog& fancyLog;
 };

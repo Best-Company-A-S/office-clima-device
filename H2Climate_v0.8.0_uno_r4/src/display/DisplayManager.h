@@ -2,10 +2,11 @@
 #define DISPLAY_MANAGER_H
 
 #include "../config/Config.h"
+#include "../utils/FancyLog.h"
 
 class DisplayManager {
   public:
-    DisplayManager();
+    DisplayManager(FancyLog& fancyLog);
     void begin();
     void showHappyFace();
     void showSadFace();
@@ -17,6 +18,7 @@ class DisplayManager {
     void clear();
 
   private:
+    FancyLog& fancyLog;
     ArduinoLEDMatrix matrix;
 };
 

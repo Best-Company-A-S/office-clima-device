@@ -1,10 +1,12 @@
 #include "DisplayManager.h"
 
-DisplayManager::DisplayManager() {}
+DisplayManager::DisplayManager(FancyLog& fancyLog)
+    : fancyLog(fancyLog) {}
 
 void DisplayManager::begin() {
     matrix.begin();
     showNeutralFace();
+    fancyLog.toSerial("LED matrix initialized");
 }
 
 void DisplayManager::showHappyFace() {
