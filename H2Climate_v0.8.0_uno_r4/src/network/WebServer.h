@@ -5,7 +5,7 @@
 #include "../utils/FancyLog.h"
 #include "../network/NetworkManager.h"
 #include <WiFiS3.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 class WebServer {
 public:

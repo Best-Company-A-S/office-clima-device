@@ -15,6 +15,7 @@ class NetworkManager {
     void checkForUpdates();
     void pollOTA();
     bool isConnected() { return WiFi.status() == WL_CONNECTED; }
+    bool registerDevice(); // Method for device registration
 
   private:
     FancyLog& fancyLog;
@@ -27,4 +28,4 @@ class NetworkManager {
     bool downloadAndApplyUpdate(String& downloadUrl, int firmwareSize);
 };
 
-#endif // NETWORK_MANAGER_H 
+#endif // NETWORK_MANAGER_H

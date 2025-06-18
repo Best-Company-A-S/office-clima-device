@@ -38,52 +38,31 @@ struct SensorData {
 };
 SensorData dataBuffer[DATA_BUFFER_SIZE]; // Using DATA_BUFFER_SIZE defined in Config.h
 
-
-void clearEEPROM() {
+// Call it *only once*! Comment it out after the first run to clear EEPROM
+/*void clearEEPROM() {
     for (int i = 0; i < EEPROM.length(); i++) {
         EEPROM.write(i, 0xFF); // Writes 0xFF (default empty value) to the entire EEPROM
     }
     Serial.println("EEPROM cleared");
-}
-
+}*/
 
 //¤============¤
 //| Setup loop |
 //¤============¤==========================================================================¤
 void setup() {
-
-    //clearEEPROM(); // Call it *only once*! Comment it out after the first run
-
   	fancyLog.begin(9600); // Initialize serial connection and logger
-
 
 	// Calling getDeviceId also initialize the DeviceIdentifier
     fancyLog.toSerial("Starting H2Climate Device | ID: " + String(deviceID.getDeviceId()), INFO);
 
-
   	display.begin(); // Initialize LED matrix
     battery.begin(); // Initialize battery monitoring
   	sensors.begin(); // Initialize sensors
-    webServer.begin(); // Initialize web server
-
-
-	//sensors.testSensors(); // Test sensors to ensure they are working
-
-
   	network.begin(); // Connect to network after sensors are initialized
-
-  	// Register device with server
-  	StaticJsonDocument<256> jsonDoc;
-  	jsonDoc["deviceId"] = DeviceIdentifier::getDeviceId();
-  	jsonDoc["modelType"] = MODEL_TYPE;
-  	jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
-
-  	String registerData;
-  	serializeJson(jsonDoc, registerData);
-  	network.sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
-
+    webServer.begin(); // Initialize web server
+  	network.registerDevice(); // Register device with server
   	network.checkForUpdates(); // Initial update check
-
+    sensors.testSensors(); // attempt some initial test readings of the sensors to ensure they are working
 
     fancyLog.toSerial("Setup complete: Web interface available at http://" + WiFi.localIP().toString() + ":80", INFO);
 }

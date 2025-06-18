@@ -489,4 +489,30 @@ bool NetworkManager::downloadAndApplyUpdate(String& downloadUrl, int firmwareSiz
     fancyLog.toSerial("Restarting with new firmware", INFO);
     OTAManager::applyUpdate();  // This will restart the board
     return true;
-} 
+}
+
+//#####################################################################################################################
+
+bool NetworkManager::registerDevice() {
+    fancyLog.toSerial("Registering device with server", INFO);
+
+    // Create device registration JSON
+    StaticJsonDocument<256> jsonDoc;
+    jsonDoc["deviceId"] = DeviceIdentifier::getDeviceId();
+    jsonDoc["modelType"] = MODEL_TYPE;
+    jsonDoc["firmwareVersion"] = FIRMWARE_VERSION;
+
+    String registerData;
+    serializeJson(jsonDoc, registerData);
+
+    // Send the registration data to the server
+    bool success = sendHttpPostRequest(registerData, API_REGISTER_ROUTE);
+
+    if (success) {
+        fancyLog.toSerial("Device registered successfully", INFO);
+    } else {
+        fancyLog.toSerial("Device registration failed", ERROR);
+    }
+
+    return success;
+}
