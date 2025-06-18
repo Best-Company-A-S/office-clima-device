@@ -6,6 +6,15 @@
  * automatic firmware updates, LED matrix status display, and battery monitoring.
  */
 
+/*
+ * ¤========================[WARNING]========================¤
+ * V1.0.0 is unfinished but is functional for testing purposes.
+ * The new BluetoothManager class is not fully implemented yet.
+ * The new EEPROMManager class is not fully implemented yet.
+ * The new WebServer class is not fully implemented yet.
+ * ¤========================[WARNING]========================¤
+ */
+
 #include "src/network/NetworkManager.h"
 #include "src/sensors/SensorManager.h"
 #include "src/utils/BatteryMonitor.h"
