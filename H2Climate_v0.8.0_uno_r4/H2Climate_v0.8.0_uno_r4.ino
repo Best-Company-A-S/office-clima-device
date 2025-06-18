@@ -10,6 +10,7 @@
 #include "src/sensors/SensorManager.h"
 #include "src/utils/BatteryMonitor.h"
 #include "src/network/WebServer.h" // Add WebServer include
+#include "src/network/BluetoothManager.h" // Add BluetoothManager include
 
 // Global objects
 FancyLog fancyLog;
@@ -20,11 +21,13 @@ BatteryMonitor battery(fancyLog);
 NetworkManager network(fancyLog, otaManager, display);
 DeviceIdentifier deviceID;
 WebServer webServer(fancyLog, network); // Add WebServer object
+BluetoothManager bluetooth(fancyLog); // Add BluetoothManager object
 
 // Timing variables
 unsigned long previousMillis = 0;
 unsigned long previousUpdateCheckMillis = 0;
 unsigned long previousBatteryLogMillis = 0;
+unsigned long previousBluetoothCheckMillis = 0; // Add Bluetooth check timing
 
 // Data collection variables
 int dataCount = 0;
@@ -58,13 +61,35 @@ void setup() {
   	display.begin(); // Initialize LED matrix
     battery.begin(); // Initialize battery monitoring
   	sensors.begin(); // Initialize sensors
-  	network.begin(); // Connect to network after sensors are initialized
-    webServer.begin(); // Initialize web server
+
+    // Initialize Bluetooth for WiFi configuration
+    bluetooth.begin();
+
+    // Enter configuration mode if no stored Wi-Fi credentials or WiFi connection fails
+    char ssid[33] = {0};
+    char password[64] = {0};
+
+    bool hasCredentials = network.loadWiFiCredentials(ssid, password);
+    if (!hasCredentials) {
+        enterConfigurationMode();
+    } else {
+        // Try to connect with stored credentials
+        if (!network.connectWiFi(ssid, password)) {
+            // If connection fails, enter configuration mode
+            enterConfigurationMode();
+        }
+    }
+
+  	webServer.begin(); // Initialize web server
   	network.registerDevice(); // Register device with server
   	network.checkForUpdates(); // Initial update check
     sensors.testSensors(); // attempt some initial test readings of the sensors to ensure they are working
 
-    fancyLog.toSerial("Setup complete: Web interface available at http://" + WiFi.localIP().toString() + ":80", INFO);
+    if (network.isConnected()) {
+        fancyLog.toSerial("Setup complete: Web interface available at http://" + WiFi.localIP().toString() + ":80", INFO);
+    } else {
+        fancyLog.toSerial("Setup complete: Device in configuration mode", INFO);
+    }
 }
 
 //¤==============¤
@@ -83,8 +108,27 @@ void loop() {
   	// Check WiFi connection
   	if (!network.isConnected()) {
     	display.showSadFace();
-    	fancyLog.toSerial("WiFi disconnected. Reconnecting...", WARNING);
-    	network.connectWiFi();
+
+    	// Check for Bluetooth Wi-Fi configuration
+    	if (currentMillis - previousBluetoothCheckMillis >= 1000) {
+    	    previousBluetoothCheckMillis = currentMillis;
+    	    bluetooth.poll();
+
+    	    // If credentials received via Bluetooth, try to connect
+    	    if (bluetooth.hasWifiCredentials()) {
+    	        char newSsid[33] = {0};
+    	        char newPassword[64] = {0};
+    	        bluetooth.getWifiCredentials(newSsid, newPassword);
+
+    	        fancyLog.toSerial("Received WiFi credentials via Bluetooth. Attempting to connect...", INFO);
+    	        if (network.connectWiFi(newSsid, newPassword)) {
+    	            // Successfully connected with new credentials
+    	            bluetooth.resetCredentialFlag();
+    	            fancyLog.toSerial("Successfully connected with new WiFi credentials", INFO);
+    	            fancyLog.toSerial("Web interface available at http://" + WiFi.localIP().toString() + ":80", INFO);
+    	        }
+    	    }
+    	}
   	}
 
   	// Calculate time until next reading
@@ -186,4 +230,54 @@ void sendBufferedData() {
   	} else {
     	fancyLog.toSerial("Failed to send data", ERROR);
   	}
+}
+
+// Helper function to enter configuration mode
+void enterConfigurationMode() {
+    fancyLog.toSerial("Entering WiFi configuration mode via Bluetooth", INFO);
+    display.showNeutralFace();
+
+    // Wait for credentials via Bluetooth
+    unsigned long startWaitTime = millis();
+    boolean connected = false;
+
+    while (!connected && (millis() - startWaitTime < 300000)) { // Wait for 5 minutes max
+        // Poll Bluetooth for credentials
+        bluetooth.poll();
+
+        if (bluetooth.hasWifiCredentials()) {
+            char newSsid[33] = {0};
+            char newPassword[64] = {0};
+            bluetooth.getWifiCredentials(newSsid, newPassword);
+
+            fancyLog.toSerial("Received WiFi credentials via Bluetooth. Attempting to connect...", INFO);
+
+            if (network.connectWiFi(newSsid, newPassword)) {
+                // Successfully connected with new credentials
+                connected = true;
+                bluetooth.resetCredentialFlag();
+                network.begin(); // Initialize network components now that we're connected
+                break;
+            } else {
+                // Failed to connect, wait for new credentials
+                bluetooth.resetCredentialFlag();
+                fancyLog.toSerial("Failed to connect with provided credentials. Please try again.", WARNING);
+            }
+        }
+
+        // Show a visual indicator that we're in configuration mode
+        if ((millis() / 500) % 2 == 0) {
+            display.showNeutralFace();
+        } else {
+            display.showSadFace();
+        }
+
+        delay(100);
+    }
+
+    if (!connected) {
+        // If we timed out without connecting, fall back to default credentials
+        fancyLog.toSerial("Configuration timeout. Falling back to default WiFi credentials.", WARNING);
+        network.begin();
+    }
 }

@@ -6,11 +6,27 @@ NetworkManager::NetworkManager(FancyLog& fancyLog, OTAManager& otaManager, Displ
 //#####################################################################################################################
 
 void NetworkManager::begin() {
-    // Connect to WiFi
-    connectWiFi();
-    
+    // Initialize EEPROM
+    EEPROM.begin();
+
+    // Try to connect with stored credentials if available
+    char ssid[33] = {0};
+    char password[64] = {0};
+
+    if (loadWiFiCredentials(ssid, password)) {
+        fancyLog.toSerial("Found stored WiFi credentials", INFO);
+        connectWiFi(ssid, password);
+    } else {
+        // Fall back to default credentials from secrets.h
+        connectWiFi();
+    }
+
     // Initialize OTA
-    OTAManager::begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS);
+    if (WiFi.status() == WL_CONNECTED) {
+        // Use credentials from secrets.h since the Arduino UNO R4 WiFi library
+        // doesn't support getting the current SSID and password via WiFi.SSID() and WiFi.psk()
+        OTAManager::begin(WiFi.localIP(), WIFI_SSID, WIFI_PASS);
+    }
 }
 
 //#####################################################################################################################
@@ -22,7 +38,13 @@ void NetworkManager::pollOTA() {
 //#####################################################################################################################
 
 bool NetworkManager::connectWiFi() {
-    fancyLog.toSerial("Connecting to WiFi: " + String(WIFI_SSID), INFO);
+    return connectWiFi(WIFI_SSID, WIFI_PASS);
+}
+
+//#####################################################################################################################
+
+bool NetworkManager::connectWiFi(const char* ssid, const char* password) {
+    fancyLog.toSerial("Connecting to WiFi: " + String(ssid), INFO);
     display.showNeutralFace();
     
     if (WiFi.status() == WL_CONNECTED) {
@@ -30,8 +52,8 @@ bool NetworkManager::connectWiFi() {
         delay(1000);
     }
     
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-    
+    WiFi.begin(ssid, password);
+
     unsigned long startAttemptTime = millis();
     int attempts = 0;
     
@@ -42,7 +64,7 @@ bool NetworkManager::connectWiFi() {
         if (attempts++ > 5) {
             WiFi.disconnect();
             delay(500);
-            WiFi.begin(WIFI_SSID, WIFI_PASS);
+            WiFi.begin(ssid, password);
             attempts = 0;
         }
     }
@@ -53,16 +75,73 @@ bool NetworkManager::connectWiFi() {
         delay(500);
     }
     
-    if (WiFi.status() == WL_CONNECTED && WiFi.localIP()[0] != 0) {
-		fancyLog.toSerial("WiFi connected successfully | IP: " + WiFi.localIP().toString() +
-						  " | RSSI: " + String(WiFi.RSSI()) + " dBm", INFO);
+    // Return true if connected, false otherwise
+    bool connected = (WiFi.status() == WL_CONNECTED);
+    if (connected) {
+        fancyLog.toSerial("Connected to WiFi. IP: " + WiFi.localIP().toString(), INFO);
         display.showHappyFace();
-        return true;
+
+        // Save these credentials if we connected successfully
+        saveWiFiCredentials(ssid, password);
     } else {
-        fancyLog.toSerial("WiFi connection failed", ERROR);
+        fancyLog.toSerial("Failed to connect to WiFi", ERROR);
         display.showSadFace();
+    }
+
+    return connected;
+}
+
+//#####################################################################################################################
+
+// Save WiFi credentials to EEPROM
+void NetworkManager::saveWiFiCredentials(const char* ssid, const char* password) {
+    // Set flag indicating credentials are stored
+    EEPROM.write(EEPROM_WIFI_FLAG, 1);
+
+    // Save SSID (max 32 chars + null terminator)
+    for (int i = 0; i < 33; i++) {
+        EEPROM.write(EEPROM_SSID_ADDR + i, ssid[i]);
+        if (ssid[i] == '\0') break;
+    }
+
+    // Save password (max 63 chars + null terminator)
+    for (int i = 0; i < 64; i++) {
+        EEPROM.write(EEPROM_PASS_ADDR + i, password[i]);
+        if (password[i] == '\0') break;
+    }
+}
+
+//#####################################################################################################################
+
+// Load WiFi credentials from EEPROM
+bool NetworkManager::loadWiFiCredentials(char* ssid, char* password) {
+    // Check if credentials are stored
+    if (EEPROM.read(EEPROM_WIFI_FLAG) != 1) {
         return false;
     }
+
+    // Load SSID
+    for (int i = 0; i < 33; i++) {
+        ssid[i] = EEPROM.read(EEPROM_SSID_ADDR + i);
+        if (ssid[i] == '\0') break;
+    }
+    ssid[32] = '\0'; // Ensure null termination
+
+    // Load password
+    for (int i = 0; i < 64; i++) {
+        password[i] = EEPROM.read(EEPROM_PASS_ADDR + i);
+        if (password[i] == '\0') break;
+    }
+    password[63] = '\0'; // Ensure null termination
+
+    return true;
+}
+
+//#####################################################################################################################
+
+// Check if credentials are stored in EEPROM
+bool NetworkManager::hasStoredCredentials() {
+    return EEPROM.read(EEPROM_WIFI_FLAG) == 1;
 }
 
 //#####################################################################################################################

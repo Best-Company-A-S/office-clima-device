@@ -256,3 +256,4 @@ void WebServer::saveNetworkCredentials(const char* ssid, const char* password) {
     // After saving credentials, you might want to restart the device
     // or reconnect to WiFi with the new credentials
 }
+
